@@ -1,0 +1,1438 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Aplikacja opiekunki Almach</title>
+<meta name="theme-color" content="#0f5c55">
+<style>
+/* Aplikacja opiekunki – duże litery, duże przyciski, mocny kontrast. Tylko jasny motyw (czytelność w słońcu). */
+:root {
+  --tlo: #f6f4ef;
+  --karta: #ffffff;
+  --tekst: #1b1b1b;
+  --szary: #5a5a5a;
+  --linia: #d9d4c7;
+  --glowny: #0f5c55;
+  --glowny-jasny: #e3f1ef;
+  --zielony: #1e7a3c;
+  --zielony-jasny: #e4f4e8;
+  --pomarancz: #b45309;
+  --pomarancz-jasny: #fff1df;
+  --czerwony: #b42318;
+  --czerwony-jasny: #fde8e6;
+  --promien: 14px;
+  --dol: 76px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--tlo); color: var(--tekst);
+  font: 19px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+h1, h2, h3 { line-height: 1.2; margin: 0; }
+h2 { font-size: 23px; margin: 22px 0 10px; }
+h3 { font-size: 20px; margin: 0 0 6px; }
+p { margin: 0 0 10px; }
+a { color: var(--glowny); }
+button, input, textarea, select { font: inherit; color: inherit; }
+
+/* Pasek górny i dolne zakładki */
+.gora {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px;
+  background: var(--glowny); color: #fff; padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top));
+  min-height: 60px;
+}
+.gora h1 { flex: 1; font-size: 21px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gora button { background: rgba(255,255,255,.16); color: #fff; border: 0; border-radius: 10px; min-height: 44px; padding: 0 14px; font-weight: 600; }
+.ekran { padding: 12px 16px calc(var(--dol) + 28px); max-width: 640px; margin: 0 auto; outline: none; }
+.dol {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex;
+  background: #fff; border-top: 1px solid var(--linia); padding-bottom: env(safe-area-inset-bottom);
+}
+.dol a {
+  flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: var(--dol); text-decoration: none; color: var(--szary); font-size: 14px; font-weight: 600; text-align: center; line-height: 1.15; padding: 4px 2px;
+}
+.dol a .ikona { font-size: 25px; line-height: 1; margin-bottom: 3px; }
+.dol a.aktywna { color: var(--glowny); background: var(--glowny-jasny); }
+.licznik { position: absolute; top: 6px; right: calc(50% - 32px); background: var(--pomarancz); color: #fff; border-radius: 99px; min-width: 24px; height: 24px; padding: 0 6px; font-size: 14px; line-height: 24px; text-align: center; }
+.pasek-offline { background: #333; color: #fff; padding: 8px 16px; font-size: 16px; text-align: center; }
+
+/* Przyciski */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  min-height: 58px; padding: 12px 18px; border-radius: var(--promien); border: 2px solid transparent;
+  background: var(--glowny); color: #fff; font-weight: 700; font-size: 20px; text-decoration: none; cursor: pointer;
+}
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: .5; }
+.btn-zielony { background: var(--zielony); }
+.btn-pomarancz { background: var(--pomarancz); }
+.btn-czerwony { background: #fff; color: var(--czerwony); border-color: var(--czerwony); }
+.btn-jasny { background: #fff; color: var(--glowny); border-color: var(--glowny); }
+.btn-maly { min-height: 48px; font-size: 18px; width: auto; padding: 8px 16px; }
+.przyciski { display: grid; gap: 12px; margin: 16px 0; }
+.przyciski-2 { grid-template-columns: 1fr 1fr; }
+
+/* Karty i listy */
+.karta { background: var(--karta); border: 1px solid var(--linia); border-radius: var(--promien); padding: 14px 16px; margin-bottom: 12px; }
+a.karta, button.karta { display: block; width: 100%; text-align: left; color: inherit; text-decoration: none; cursor: pointer; }
+.karta-wizyta { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 14px; align-items: center; }
+.godzina { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.godzina small { display: block; font-size: 16px; font-weight: 600; color: var(--szary); }
+.kto { font-size: 20px; font-weight: 700; }
+.gdzie { color: var(--szary); font-size: 17px; }
+.strzalka { font-size: 30px; color: var(--szary); }
+.dzien { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--glowny); margin: 22px 0 8px; }
+.dzien.dzis { color: var(--zielony); }
+.znaczek { display: inline-block; border-radius: 8px; padding: 2px 10px; font-size: 15px; font-weight: 700; }
+.znaczek-ok { background: var(--zielony-jasny); color: var(--zielony); }
+.znaczek-uwaga { background: var(--pomarancz-jasny); color: var(--pomarancz); }
+.znaczek-pilne { background: var(--czerwony-jasny); color: var(--czerwony); }
+.uwaga { background: var(--pomarancz-jasny); border: 2px solid var(--pomarancz); border-radius: var(--promien); padding: 14px 16px; margin: 12px 0; }
+.info { background: var(--glowny-jasny); border-radius: var(--promien); padding: 14px 16px; margin: 12px 0; }
+.blad { background: var(--czerwony-jasny); color: var(--czerwony); border-radius: var(--promien); padding: 12px 16px; margin: 12px 0; font-weight: 600; }
+.pusto { text-align: center; color: var(--szary); padding: 34px 12px; }
+.szary { color: var(--szary); }
+
+/* Giełda */
+.wolna { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; }
+.wolna .btn { width: auto; min-width: 112px; }
+.wolna.zablokowana { background: #f1f0ec; }
+.powod { grid-column: 1 / -1; color: var(--pomarancz); font-weight: 600; font-size: 17px; }
+.pakiet { border: 3px solid var(--pomarancz); background: var(--pomarancz-jasny); }
+.pakiet-wiersz { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--linia); }
+.pakiet-wiersz:first-of-type { border-top: 0; }
+
+/* Pola formularzy */
+label.pole { display: block; font-weight: 700; margin: 16px 0 6px; }
+input[type=text], input[type=tel], input[type=date], input[type=time], textarea {
+  width: 100%; min-height: 58px; border: 2px solid #9a9486; border-radius: 12px; background: #fff; padding: 10px 14px; font-size: 21px;
+}
+textarea { min-height: 130px; line-height: 1.4; }
+input:focus, textarea:focus, .btn:focus-visible, a:focus-visible { outline: 3px solid #f2b705; outline-offset: 2px; }
+.duze-pole { font-size: 30px !important; letter-spacing: .12em; text-align: center; font-variant-numeric: tabular-nums; }
+.dwa { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wybor { display: flex; align-items: center; gap: 14px; min-height: 58px; padding: 8px 12px; border: 2px solid var(--linia); border-radius: 12px; background: #fff; margin-bottom: 8px; cursor: pointer; }
+.wybor input { width: 30px; height: 30px; flex: none; accent-color: var(--zielony); }
+.wybor.zaznaczone { border-color: var(--zielony); background: var(--zielony-jasny); }
+.zwroty { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.zwroty button { border: 2px solid var(--glowny); background: #fff; color: var(--glowny); border-radius: 99px; min-height: 44px; padding: 4px 14px; font-weight: 600; font-size: 17px; }
+
+/* Klawiatura PIN */
+.pin-kropki { display: flex; justify-content: center; gap: 18px; margin: 18px 0 22px; }
+.pin-kropki span { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--glowny); }
+.pin-kropki span.pelna { background: var(--glowny); }
+.klawiatura { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 340px; margin: 0 auto; }
+.klawiatura button { min-height: 70px; border-radius: 16px; border: 2px solid var(--linia); background: #fff; font-size: 30px; font-weight: 700; }
+.klawiatura button:active { background: var(--glowny-jasny); }
+.logowanie { padding-top: 24px; }
+.logo { text-align: center; margin: 12px 0 18px; }
+.logo img { width: 84px; height: 84px; }
+.logo h1 { font-size: 28px; margin-top: 8px; color: var(--glowny); }
+
+/* Karta podopiecznego */
+dl.dane { margin: 0; }
+dl.dane dt { font-weight: 700; margin-top: 10px; }
+dl.dane dd { margin: 2px 0 0; }
+ul.lista { margin: 0; padding-left: 22px; }
+ul.lista li { margin: 4px 0; }
+.wpis { border-left: 4px solid var(--glowny); padding: 6px 0 6px 12px; margin: 12px 0; }
+.wpis small { display: block; color: var(--szary); font-size: 15px; }
+.grafik-wiersz { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--linia); }
+.grafik-wiersz.moja { font-weight: 700; color: var(--glowny); }
+.suma { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.suma div { background: #fff; border: 1px solid var(--linia); border-radius: var(--promien); padding: 12px; text-align: center; }
+.suma b { display: block; font-size: 30px; }
+
+/* Okno (potwierdzenia) i ekran „Wizyta jest Twoja” */
+.okno { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; }
+.okno-tresc { background: #fff; width: 100%; max-width: 640px; border-radius: 20px 20px 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); max-height: 92vh; overflow: auto; }
+.okno-tresc h2 { margin-top: 0; }
+.sukces { position: fixed; inset: 0; z-index: 30; background: var(--zielony); color: #fff; display: flex; flex-direction: column; justify-content: center; padding: 24px; text-align: center; }
+.sukces .znak { font-size: 86px; line-height: 1; }
+.sukces h2 { font-size: 32px; margin: 16px 0; }
+.sukces p { font-size: 21px; }
+.sukces .btn { background: #fff; color: var(--zielony); margin-top: 24px; }
+.sukces.porazka { background: #5a5a5a; }
+.sukces.porazka .btn { color: #333; }
+.ladowanie { text-align: center; padding: 50px 0; color: var(--szary); }
+.komunikat { position: fixed; left: 16px; right: 16px; bottom: calc(var(--dol) + 14px); z-index: 25; background: #222; color: #fff; padding: 14px 16px; border-radius: 12px; text-align: center; font-weight: 600; }
+.srodek { text-align: center; }
+.odstep { margin-top: 16px; }
+.karta.karta-wizyta { display: grid; }
+.wolna .godzina { white-space: nowrap; }
+.dwa > div { min-width: 0; }
+input[type=date], input[type=time] { min-width: 0; -webkit-appearance: none; appearance: none; }
+.grafik-wiersz:first-child { border-top: 0; }
+input[type=date] { font-size: 19px; padding: 10px 8px; }
+.znaczek-klucz { background: #fff4c2; color: #6b4e00; margin-top: 4px; }
+.pasek-podglad { position: sticky; top: 0; z-index: 6; display: flex; gap: 10px; align-items: center; justify-content: space-between; background: #3b2a78; color: #fff; padding: 8px 16px; font-size: 16px; font-weight: 600; }
+.pasek-podglad button { background: #fff; color: #3b2a78; border: 0; border-radius: 8px; min-height: 40px; padding: 0 12px; font-weight: 700; }
+
+/* Przełącznik Lista / Kalendarz */
+.przelacznik { display: grid; grid-template-columns: 1fr 1fr; background: #e7e3d8; border-radius: 12px; padding: 4px; margin: 4px 0 12px; }
+.przelacznik a { text-align: center; padding: 10px; border-radius: 9px; text-decoration: none; color: var(--szary); font-weight: 700; }
+.przelacznik a.wybrany { background: #fff; color: var(--glowny); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+/* Kalendarz miesiąca */
+.kal-miesiac { display: grid; grid-template-columns: 52px 1fr 52px; align-items: center; gap: 8px; margin: 8px 0 4px; }
+.kal-miesiac h2 { margin: 0; text-align: center; }
+.kal-miesiac .btn { width: 100%; padding: 8px 0; font-size: 24px; }
+.kalendarz { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 10px 0 6px; }
+.kal-naglowek { text-align: center; font-size: 14px; font-weight: 800; color: var(--szary); padding: 4px 0; }
+.kal-naglowek.weekend { color: var(--pomarancz); }
+.kal-dzien { min-height: 64px; border-radius: 10px; background: #fff; border: 1px solid var(--linia); display: flex; flex-direction: column; align-items: center; padding: 4px 1px; text-decoration: none; color: var(--tekst); gap: 1px; }
+.kal-dzien.weekend { background: var(--pomarancz-jasny); }
+.kal-dzien.minal { opacity: .62; }
+.kal-dzien.ma .kal-nr { font-weight: 800; }
+.kal-dzien.dzis { border: 3px solid var(--zielony); }
+.kal-dzien.wybrany { background: var(--glowny); color: #fff; border-color: var(--glowny); opacity: 1; }
+.kal-nr { font-size: 18px; line-height: 1.2; }
+.kal-godz { font-size: 14px; font-weight: 800; color: var(--glowny); }
+.kal-ile, .kal-wolne { font-size: 11px; color: var(--szary); }
+.kal-dzien.wybrany .kal-godz, .kal-dzien.wybrany .kal-ile { color: #fff; }
+/* Moje godziny: tygodnie */
+.tydzien { background: #fff; border: 1px solid var(--linia); border-radius: var(--promien); margin: 14px 0; overflow: hidden; }
+.tydzien-naglowek { display: flex; justify-content: space-between; background: var(--glowny-jasny); color: var(--glowny); padding: 10px 14px; font-weight: 700; }
+.tydzien-dzien { display: grid; grid-template-columns: 46px 1fr; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--linia); }
+.tydzien-dzien.weekend { background: var(--pomarancz-jasny); }
+.tydzien-data { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.tydzien-data b { font-size: 14px; color: var(--szary); }
+.tydzien-dzien.weekend .tydzien-data b { color: var(--pomarancz); }
+.tydzien-data span { font-size: 22px; font-weight: 800; }
+.tydzien-wizyta { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; font-size: 17px; }
+.wybor.wybor-alarm { border-color: var(--czerwony); color: var(--czerwony); font-weight: 700; }
+.wybor.wybor-alarm.zaznaczone { background: var(--czerwony-jasny); border-color: var(--czerwony); }
+.sukces .btn + .btn { margin-top: 12px; }
+.pasek-akcji { position: sticky; bottom: calc(var(--dol) + 8px + env(safe-area-inset-bottom, 0px)); padding: 12px 0 4px; background: linear-gradient(transparent, var(--tlo) 30%); }
+/* Pole daty: ikona kalendarza po prawej (cała szerokość pola otwiera kalendarz) */
+input[type=date] {
+  padding-right: 48px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f5c55' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4.5' width='18' height='17' rx='2.5'/%3E%3Cpath d='M3 9.5h18M8 2.5v4M16 2.5v4'/%3E%3Crect x='7' y='13' width='3' height='3' rx='.5' fill='%230f5c55' stroke='none'/%3E%3C/svg%3E") no-repeat right 12px center / 26px 26px;
+  cursor: pointer;
+}
+input[type=date]::-webkit-calendar-picker-indicator { opacity: 0; position: absolute; right: 0; width: 48px; height: 100%; cursor: pointer; }
+input[type=date] { position: relative; }
+input[type=date] { font-size: 18px; padding-left: 10px; padding-right: 40px; background-position: right 8px center; background-size: 24px 24px; }
+
+.pokaz { background: #fff4c2; color: #6b4e00; text-align: center; font-size: 14px; font-weight: 700; padding: 6px 16px; }
+</style>
+</head>
+<body>
+<div class="pokaz">Wersja pokazowa · dane wymyślone · nic nie jest zapisywane</div>
+
+<div id="offline" class="pasek-offline" hidden>Brak internetu – pokazuję ostatnio zapisane dane.</div>
+<header id="gora" class="gora" hidden>
+  <button id="wstecz" class="gora-wstecz" type="button" data-akcja="wstecz" hidden aria-label="Wróć">‹ Wróć</button>
+  <h1 id="tytul">Almach</h1>
+</header>
+<main id="ekran" class="ekran" tabindex="-1"></main>
+<nav id="dol" class="dol" hidden>
+  <a href="#/moje" data-zakladka="moje"><span class="ikona" aria-hidden="true">📅</span>Moje wizyty</a>
+  <a href="#/wolne" data-zakladka="wolne"><span class="ikona" aria-hidden="true">🔔</span>Wolne wizyty<b id="licznik-prop" class="licznik" hidden></b></a>
+  <a href="#/podopieczni" data-zakladka="podopieczni"><span class="ikona" aria-hidden="true">🏠</span>Podopieczni</a>
+  <a href="#/wiecej" data-zakladka="biuro"><span class="ikona" aria-hidden="true">📞</span>Biuro</a>
+</nav>
+<div id="okno" class="okno" hidden role="dialog" aria-modal="true"><div class="okno-tresc" id="okno-tresc"></div></div>
+
+<script>
+/* Wersja pokazowa aplikacji opiekunki: zastępuje serwer danymi wymyślonymi, trzymanymi w pamięci.
+   Ładowana PRZED app.js. Nic nie jest wysyłane ani zapisywane – po odświeżeniu wszystko wraca do początku. */
+(function () {
+  'use strict';
+  const pad = (n) => String(n).padStart(2, '0');
+  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const dzien = (przes) => { const d = new Date(); d.setDate(d.getDate() + przes); return iso(d); };
+  const teraz = new Date();
+  const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const dow = (s) => { const x = new Date(s + 'T12:00:00').getDay(); return x === 0 ? 7 : x; };
+  const godzin = (od, doo) => { const [a, b] = od.split(':').map(Number), [c, e] = doo.split(':').map(Number); return ((c * 60 + e) - (a * 60 + b)) / 60; };
+
+  const CZYNNOSCI = ['Pomoc w higienie osobistej', 'Pomoc przy ubieraniu', 'Przygotowanie posiłku', 'Przypomnienie o lekach', 'Zakupy',
+    'Sprzątanie', 'Spacer', 'Towarzystwo, rozmowa', 'Kąpiel / prysznic', 'Słanie łóżka, zmiana pościeli'].map((n, i) => ({ id: i + 1, nazwa: n }));
+
+  const P = {
+    1: { id: 1, imie: 'Zofia', nazwisko: 'Abacka', ulica: 'Klonowa', nr_domu: '3', nr_mieszkania: '2', kod_pocztowy: '85-001', miasto: 'Bydgoszcz', klucz: false, zakres: [1, 3, 4, 8],
+         karta: { telefon: '600 100 201', kontakty: [['Córka – Ewa', '600 200 300'], ['Klucze', 'u sąsiadki, m. 3']], leki: [['8:00', 'leki poranne z dozownika'], ['17:00', 'leki wieczorne z dozownika']],
+                  zdrowie: ['Cukrzyca – po posiłku sprawdzić, czy zjadła', 'Słabszy słuch – mówić wyraźnie'], inne: [['Dieta', 'bez cukru'], ['Zwierzęta', 'kot']] } },
+    2: { id: 2, imie: 'Jan', nazwisko: 'Babacki', ulica: 'Lipowa', nr_domu: '12', nr_mieszkania: '', kod_pocztowy: '85-002', miasto: 'Bydgoszcz', klucz: true, zakres: [3, 5, 6, 7, 8],
+         karta: { telefon: '600 100 202', kontakty: [['Syn – Marek', '600 300 400'], ['Klucze', 'skrzynka na klucze przy drzwiach, kod podaje biuro']], leki: [], zdrowie: ['Chodzi o kulach – asekurować na schodach'], inne: [] } },
+    3: { id: 3, imie: 'Helena', nazwisko: 'Cebulska', ulica: 'Bukowa', nr_domu: '7', nr_mieszkania: '14', kod_pocztowy: '85-003', miasto: 'Bydgoszcz', klucz: false, zakres: [1, 2, 9, 10],
+         karta: { telefon: '', kontakty: [['Wnuczka – Ola', '600 500 600']], leki: [['12:00', 'lek na ciśnienie']], zdrowie: [], inne: [['Uwaga', 'lubi rozmawiać o ogrodzie']] } },
+    4: { id: 4, imie: 'Maria', nazwisko: 'Iglicka', ulica: 'Świerkowa', nr_domu: '30', nr_mieszkania: '11', kod_pocztowy: '85-004', miasto: 'Bydgoszcz', klucz: true, zakres: [3, 4, 8] },
+    5: { id: 5, imie: 'Edward', nazwisko: 'Nowacki', ulica: 'Jodłowa', nr_domu: '5', nr_mieszkania: '1', kod_pocztowy: '85-005', miasto: 'Fordon', klucz: false, zakres: [5, 7, 8] },
+    6: { id: 6, imie: 'Stefania', nazwisko: 'Orzechowska', ulica: 'Wrzosowa', nr_domu: '9', nr_mieszkania: '4', kod_pocztowy: '85-006', miasto: 'Bydgoszcz', klucz: false, zakres: [1, 3] },
+  };
+  const REJON = { 1: 'Kapuściska', 2: 'Kapuściska', 3: 'Szwederowo', 4: 'Wyżyny', 5: 'Fordon', 6: 'Szwederowo' };
+  const INNE = ['Barbara P.', 'Celina W.', 'Danuta K.'];
+
+  // Wizyty: moje (od 5 dni wstecz do 3 tygodni naprzód) i wolne (giełda)
+  let nastId = 1;
+  const W = [];
+  const dodaj = (pod, przes, od, doo, moja, extra = {}) => W.push({ id: nastId++, pod, dzien: dzien(przes), od, do: doo, moja, raport: null, zgloszenia: [], ...extra });
+  for (let d = -5; d <= 21; d++) {
+    const t = dow(dzien(d));
+    if (t <= 5) { dodaj(1, d, '08:00', '09:00', true); dodaj(3, d, '11:00', '12:30', true); dodaj(1, d, '16:30', '17:30', true); }
+    if (t === 1 || t === 3 || t === 5) dodaj(2, d, '09:30', '11:30', true); else if (t <= 5) dodaj(2, d, '09:30', '11:30', false, { kto: INNE[0] });
+    if (t >= 6) { dodaj(1, d, '09:00', '10:00', false, { kto: INNE[1] }); }
+  }
+  // Dzisiaj: jedna wizyta „trwa teraz”, żeby od razu dało się wypełnić raport
+  const start = new Date(teraz.getTime() - 40 * 60000), koniec = new Date(teraz.getTime() + 20 * 60000);
+  if (start.getDate() === teraz.getDate()) dodaj(6, 0, hm(start), hm(koniec), true);
+  // Raporty dla części minionych wizyt
+  W.filter((w) => w.moja && w.dzien < dzien(-2)).forEach((w) => {
+    w.raport = { wejscie: w.od, wyjscie: w.do, przebieg: 'Bez zmian.', widzi_rodzina: true, czynnosci: P[w.pod].zakres.slice(0, 2) };
+  });
+  // Giełda
+  dodaj(4, 1, '09:00', '10:00', false, { komentarz: 'weekend' });
+  dodaj(4, 2, '09:00', '10:00', false);
+  dodaj(5, 3, '11:00', '12:00', false);
+  dodaj(5, 4, '07:30', '08:30', false);
+  dodaj(6, 5, '13:00', '14:00', false);
+  dodaj(4, 6, '15:00', '16:00', false);
+  dodaj(3, 8, '11:30', '12:30', false); // koliduje z moją wizytą u Cebulskiej
+  // Propozycja od biura (pakiet 3 wizyt u nowej podopiecznej)
+  for (const d of [9, 10, 11]) dodaj(4, d, '14:00', '15:00', false, { propozycja: true });
+
+  const zeszyt = {
+    1: [{ id: 2, tresc: 'Dozownik jest. Klucz po wizycie zostawiam u sąsiadki z m. 3.', kiedy: dzien(-1) + ' 17:40', autor: 'Anna P.' },
+        { id: 1, tresc: 'Informacja od córki: od poniedziałku nowy dozownik leków, stoi na lodówce.', kiedy: dzien(-3) + ' 10:15', autor: 'Biuro' }],
+  };
+  let wolneDni = [{ id: 1, od: dzien(25), do_dnia: dzien(26), typ: 'wolne', wpisal: 'opiekunka', mozna_usunac: true }];
+  let stanLogowania = 'zalogowana';
+  const prosby = new Set();
+
+  const minela = (w) => new Date(`${w.dzien}T${w.do}:00`) < new Date();
+  const zaczeta = (w) => new Date(`${w.dzien}T${w.od}:00`) <= new Date(Date.now() + 15 * 60000);
+  const adres = (p) => `${p.ulica} ${p.nr_domu}${p.nr_mieszkania ? '/' + p.nr_mieszkania : ''}`;
+  const moje = () => W.filter((w) => w.moja);
+  const kolizja = (w) => moje().find((m) => m.dzien === w.dzien && m.od < w.do && m.do > w.od);
+  const wolneDzien = (s) => wolneDni.some((n) => s >= n.od && s <= n.do_dnia);
+  const blad = (tresc, kod = 400, extra = {}) => ({ kod, dane: { blad: tresc, ...extra } });
+
+  function obsluz(metoda, sciezka, q, body) {
+    let m;
+    if (sciezka === '/me') {
+      if (stanLogowania === 'zalogowana') return { stan: 'zalogowana', ja: { id: 1, rola: 'opiekunka', imie: 'Anna', nazwisko: 'Pokazowa', opiekunka_id: 1 }, telefonBiura: '+48 500 000 000', vapid: null };
+      return { stan: stanLogowania, telefonBiura: '+48 500 000 000' };
+    }
+    if (sciezka === '/logout') { stanLogowania = body.zapomnij ? 'telefon' : 'pin'; return { ok: true }; }
+    if (sciezka === '/login/start') return { ok: true };
+    if (sciezka === '/login/verify') return (body.kod || '').length === 6 ? (stanLogowania = 'zalogowana', { ok: true, ustawPin: false }) : blad('Wpisz 6 cyfr z SMS-a.');
+    if (sciezka === '/login/pin') { stanLogowania = 'zalogowana'; return { ok: true }; }
+    if (sciezka === '/pin/set') return { ok: true };
+    if (sciezka === '/push') return { ok: true };
+    if (sciezka === '/moje') {
+      const od = dzien(-7), doo = dzien(36);
+      return {
+        wizyty: moje().filter((w) => w.dzien >= od && w.dzien < doo).sort((a, b) => (a.dzien + a.od).localeCompare(b.dzien + b.od)).map((w) => {
+          const p = P[w.pod];
+          return { id: w.id, dzien: w.dzien, od: w.od, do: w.do, dow: dow(w.dzien), godz: godzin(w.od, w.do), komentarz: w.komentarz || null, podopieczny_id: p.id,
+            imie: p.imie, nazwisko: p.nazwisko, klucz: p.klucz, adres: adres(p), miasto: p.miasto, raport: !!w.raport, minela: minela(w), teraz: false };
+        }),
+        propozycje: W.filter((w) => w.propozycja && !w.moja).length, gielda: true,
+        nieobecnosci: wolneDni.map((n) => ({ od: n.od, do_dnia: n.do_dnia, typ: n.typ })), dzis: dzien(0),
+      };
+    }
+    if (sciezka === '/wolne') {
+      return { wizyty: W.filter((w) => !w.moja && !w.kto && !minela(w)).sort((a, b) => (b.propozycja ? 1 : 0) - (a.propozycja ? 1 : 0) || (a.dzien + a.od).localeCompare(b.dzien + b.od)).map((w) => {
+        const p = P[w.pod], k = kolizja(w);
+        return { id: w.id, dzien: w.dzien, od: w.od, do: w.do, dow: dow(w.dzien), godz: godzin(w.od, w.do), komentarz: w.komentarz || null, podopieczny_id: p.id,
+          inicjal: p.imie[0], nazwisko: p.nazwisko, ulica: p.ulica, rejon: REJON[p.id], klucz: p.klucz, dla_mnie: !!w.propozycja,
+          pilna: new Date(`${w.dzien}T${w.od}:00`) - Date.now() < 48 * 3600000, nieobecna: wolneDzien(w.dzien),
+          kolizja: k ? `${k.od}–${k.do} ${P[k.pod].nazwisko}` : null, zapytano: prosby.has(w.id) };
+      }) };
+    }
+    if (sciezka === '/przyjmij') {
+      const wz = [];
+      for (const id of body.wizyty || []) {
+        const w = W.find((x) => x.id === id);
+        if (!w || w.moja || w.kto || kolizja(w) || wolneDzien(w.dzien)) continue;
+        w.moja = true; w.propozycja = false; wz.push(w);
+      }
+      return { przyjete: wz.length, zaznaczone: (body.wizyty || []).length, wizyty: wz.map((w) => ({ id: w.id, dzien: w.dzien, od: w.od, do: w.do, imie: P[w.pod].imie, nazwisko: P[w.pod].nazwisko })) };
+    }
+    if (sciezka === '/odrzuc') { let n = 0; for (const id of body.wizyty || []) { const w = W.find((x) => x.id === id); if (w && w.propozycja) { w.propozycja = false; n++; } } return { odrzucone: n }; }
+    if (sciezka === '/oddaj') {
+      const ids = body.wizyty || [body.wizyta]; let n = 0;
+      for (const id of ids) { const w = W.find((x) => x.id === id && x.moja); if (w && !zaczeta(w)) { w.moja = false; n++; } }
+      return n ? { ok: true, oddane: n, zaznaczone: ids.length } : blad('Nie można oddać tej wizyty (już się zaczęła).');
+    }
+    if ((m = sciezka.match(/^\/wizyta\/(\d+)$/))) {
+      const w = W.find((x) => x.id === +m[1] && x.moja);
+      if (!w) return blad('Tej wizyty nie ma w Twoim grafiku.', 404);
+      const p = P[w.pod];
+      const ostatni = moje().filter((x) => x.pod === w.pod && x.raport && x.id !== w.id).pop();
+      return { wizyta: { id: w.id, dzien: w.dzien, od: w.od, do: w.do, dow: dow(w.dzien), godz: godzin(w.od, w.do), komentarz: w.komentarz || null, minela: minela(w),
+          przyszla: new Date(`${w.dzien}T${w.od}:00`) > new Date(), podopieczny_id: p.id, imie: p.imie, nazwisko: p.nazwisko, ulica: p.ulica, nr_domu: p.nr_domu,
+          nr_mieszkania: p.nr_mieszkania, kod_pocztowy: p.kod_pocztowy, miasto: p.miasto, klucz: p.klucz },
+        karta: p.karta || null, zakres: CZYNNOSCI.filter((c) => p.zakres.includes(c.id)), raport: w.raport,
+        jakOstatnio: ostatni ? ostatni.raport.czynnosci : [], zgloszenia: w.zgloszenia };
+    }
+    if (sciezka === '/raport') {
+      const w = W.find((x) => x.id === body.wizyta && x.moja);
+      if (!w) return blad('Tej wizyty nie ma w Twoim grafiku.', 404);
+      if (!zaczeta(w)) return blad('Raport wypełnia się na koniec wizyty.');
+      if (w.raport) return { ok: true, juz: true };
+      w.raport = { wejscie: body.wejscie, wyjscie: body.wyjscie, przebieg: body.przebieg, widzi_rodzina: body.rodzina, czynnosci: body.czynnosci };
+      if (body.doZeszytu && (body.przebieg || '').trim()) (zeszyt[w.pod] = zeszyt[w.pod] || []).unshift({ id: Date.now(), tresc: body.przebieg, kiedy: dzien(0) + ' ' + hm(new Date()), autor: 'Anna P.' });
+      return { ok: true };
+    }
+    if (sciezka === '/podopieczni') {
+      const ids = [...new Set(moje().map((w) => w.pod))];
+      return { podopieczni: ids.map((id) => { const p = P[id]; const n = moje().filter((w) => w.pod === id && !zaczeta(w)).sort((a, b) => (a.dzien + a.od).localeCompare(b.dzien + b.od))[0];
+        return { id, imie: p.imie, nazwisko: p.nazwisko, adres: adres(p), nastepna: n ? `${n.dzien} ${n.od}` : null }; }).sort((a, b) => a.nazwisko.localeCompare(b.nazwisko, 'pl')) };
+    }
+    if ((m = sciezka.match(/^\/podopieczny\/(\d+)(\/zeszyt)?$/))) {
+      const id = +m[1], p = P[id];
+      if (!p || !moje().some((w) => w.pod === id)) return blad('Nie masz wizyt u tej osoby.', 403);
+      if (m[2]) {
+        if (!(body.tresc || '').trim()) return blad('Wpisz treść.');
+        (zeszyt[id] = zeszyt[id] || []).unshift({ id: Date.now(), tresc: body.tresc.trim(), kiedy: dzien(0) + ' ' + hm(new Date()), autor: 'Anna P.' });
+        return { ok: true, zeszyt: zeszyt[id] };
+      }
+      return { podopieczny: { id, imie: p.imie, nazwisko: p.nazwisko, ulica: p.ulica, nr_domu: p.nr_domu, nr_mieszkania: p.nr_mieszkania, kod_pocztowy: p.kod_pocztowy, miasto: p.miasto, klucz: p.klucz },
+        karta: p.karta || null, zeszyt: zeszyt[id] || [],
+        grafik: W.filter((w) => w.pod === id && w.dzien >= dzien(-7) && w.dzien < dzien(15)).sort((a, b) => (a.dzien + a.od).localeCompare(b.dzien + b.od))
+          .map((w) => ({ id: w.id, dzien: w.dzien, od: w.od, do: w.do, moja: w.moja, kto: w.moja ? 'Anna P.' : (w.kto || null) })) };
+    }
+    if (sciezka === '/prosba') { prosby.add(body.wizyta); return { ok: true }; }
+    if (sciezka === '/zgloszenie') {
+      const w = W.find((x) => x.id === body.wizyta);
+      if (w) w.zgloszenia.push({ typ: body.typ, opis: body.opis || null, godz: hm(new Date()) });
+      return { ok: true };
+    }
+    if (sciezka === '/wolne-dni' && metoda === 'GET') return { dni: wolneDni };
+    if (sciezka === '/wolne-dni' && metoda === 'POST') {
+      const kol = moje().filter((w) => w.dzien >= body.od && w.dzien <= body.do).map((w) => `${w.dzien.slice(8)}.${w.dzien.slice(5, 7)} ${w.od} ${P[w.pod].nazwisko}`);
+      if (kol.length && !body.oddaj) return blad('W tych dniach masz wizyty. Najpierw je oddaj albo zadzwoń do biura.', 409, { wizyty: kol, moznaOddac: true });
+      if (body.oddaj) moje().filter((w) => w.dzien >= body.od && w.dzien <= body.do).forEach((w) => { w.moja = false; });
+      wolneDni.push({ id: Date.now(), od: body.od, do_dnia: body.do, typ: 'wolne', wpisal: 'opiekunka', mozna_usunac: true });
+      return { dni: wolneDni };
+    }
+    if ((m = sciezka.match(/^\/wolne-dni\/(\d+)$/))) { wolneDni = wolneDni.filter((n) => n.id !== +m[1]); return { dni: wolneDni }; }
+    if (sciezka === '/godziny') {
+      const mies = q.get('miesiac') || dzien(0).slice(0, 7);
+      const lista = moje().filter((w) => w.dzien.startsWith(mies)).sort((a, b) => (a.dzien + a.od).localeCompare(b.dzien + b.od));
+      const plan = lista.reduce((s, w) => s + godzin(w.od, w.do), 0);
+      const potw = lista.reduce((s, w) => s + (w.raport ? godzin(w.raport.wejscie, w.raport.wyjscie) : 0), 0);
+      return { miesiac: mies, suma: { plan, potw, wizyt: lista.length, bez_raportu: lista.filter((w) => !w.raport && w.dzien < dzien(0)).length },
+        wizyty: lista.map((w) => ({ id: w.id, dzien: w.dzien, plan: godzin(w.od, w.do), potw: w.raport ? godzin(w.raport.wejscie, w.raport.wyjscie) : 0,
+          potwierdzona: !!w.raport, nazwisko: P[w.pod].nazwisko, imie: P[w.pod].imie, klucz: P[w.pod].klucz, podopieczny_id: w.pod,
+          adres: adres(P[w.pod]), minela: minela(w), od: w.od, do: w.do })),
+        wolne: wolneDni.map((n) => ({ od: n.od, do_dnia: n.do_dnia, typ: n.typ })), dzis: dzien(0) };
+    }
+    return blad('Nie ma takiej strony.', 404);
+  }
+
+  const prawdziwyFetch = window.fetch.bind(window);
+  window.fetch = async function (url, opcje = {}) {
+    const u = new URL(String(url), location.href);
+    if (!u.pathname.startsWith('/api')) return prawdziwyFetch(url, opcje);
+    await new Promise((r) => setTimeout(r, 150));
+    let body = {};
+    try { body = opcje.body ? JSON.parse(opcje.body) : {}; } catch (e) { /* nic */ }
+    const wynik = obsluz((opcje.method || 'GET').toUpperCase(), u.pathname.replace(/^\/api/, ''), u.searchParams, body);
+    const kod = wynik && wynik.kod && wynik.dane ? wynik.kod : 200;
+    return new Response(JSON.stringify(kod === 200 ? wynik : wynik.dane), { status: kod, headers: { 'Content-Type': 'application/json' } });
+  };
+})();
+
+</script>
+<script>
+/* Aplikacja opiekunki Almach – czysty JavaScript, bez bibliotek.
+   Zasada: do grafiku wpisuje wyłącznie kliknięcie „Biorę”. Brak lokalizacji, rankingów i mierzenia punktualności. */
+'use strict';
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const ekran = $('#ekran');
+const stan = { telefon: '', telefonBiura: '', ja: null, dane: {}, vapid: null };
+
+// ------------------------------------------------------------ pomocnicze
+const h = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DNI = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
+const MIES = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+const MIES_M = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+const data = (s) => { const [r, m, d] = s.split('-').map(Number); return new Date(r, m - 1, d); };
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dzisIso = () => iso(new Date());
+function nazwaDnia(s) {
+  const d = data(s), dzis = data(dzisIso());
+  const roznica = Math.round((d - dzis) / 86400000);
+  const pelna = `${DNI[d.getDay()]}, ${d.getDate()} ${MIES[d.getMonth()]}`;
+  if (roznica === 0) return 'Dziś – ' + pelna;
+  if (roznica === 1) return 'Jutro – ' + pelna;
+  if (roznica === -1) return 'Wczoraj – ' + pelna;
+  return pelna;
+}
+const krotko = (s) => { const d = data(s); return `${DNI[d.getDay()]} ${d.getDate()}.${String(d.getMonth() + 1).padStart(2, '0')}`; };
+const godz = (x) => { const n = parseFloat(x) || 0; return (Math.round(n * 100) / 100).toString().replace('.', ',') + ' h'; };
+const startWizyty = (w) => new Date(`${w.dzien}T${w.od}:00`);
+const grupuj = (lista, klucz) => lista.reduce((m, x) => ((m[x[klucz]] = m[x[klucz]] || []).push(x), m), {});
+const ladowanie = () => { ekran.innerHTML = '<p class="ladowanie">Wczytuję…</p>'; };
+const telLink = (t) => 'tel:' + String(t).replace(/[^\d+]/g, '');
+const mapa = (adres) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(adres);
+
+function komunikat(tekst) {
+  const el = document.createElement('div');
+  el.className = 'komunikat';
+  el.textContent = tekst;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ------------------------------------------------------------ połączenie z serwerem (+ pamięć na brak internetu)
+class BladApi extends Error { constructor(m, d, kod) { super(m); this.dane = d; this.kod = kod; } }
+
+async function api(metoda, sciezka, dane) {
+  let odp;
+  try {
+    odp = await fetch('/api' + sciezka, {
+      method: metoda, credentials: 'same-origin',
+      headers: { 'X-Almach': '1', 'Content-Type': 'application/json' },
+      body: dane === undefined ? undefined : JSON.stringify(dane),
+    });
+  } catch (e) {
+    if (metoda === 'GET') {
+      const zapis = pamiec('c:' + sciezka);
+      if (zapis) { pokazOffline(true); return zapis; }
+    }
+    pokazOffline(true);
+    throw new BladApi('Brak internetu. Spróbuj, gdy będzie zasięg.', {}, 0);
+  }
+  pokazOffline(false);
+  let json = {};
+  try { json = await odp.json(); } catch (e) { /* pusta odpowiedź */ }
+  if (odp.status === 401 && (json.zaloguj || json.telefon)) {
+    location.hash = json.telefon ? '#/telefon' : '#/start';
+    throw new BladApi(json.blad || 'Zaloguj się.', json, 401);
+  }
+  if (!odp.ok) throw new BladApi(json.blad || 'Coś poszło nie tak.', json, odp.status);
+  if (metoda === 'GET') pamiec('c:' + sciezka, json);
+  return json;
+}
+
+function pamiec(klucz, wartosc) {
+  try {
+    if (wartosc === undefined) return JSON.parse(localStorage.getItem(klucz) || 'null');
+    localStorage.setItem(klucz, JSON.stringify(wartosc));
+  } catch (e) { return null; }
+}
+function pokazOffline(tak) { $('#offline').hidden = !tak; }
+
+// Kolejka wysyłek bez internetu (raporty, zgłoszenia) – wysyłana, gdy wróci zasięg
+const kolejka = () => pamiec('kolejka') || [];
+function doKolejki(sciezka, dane, opis) { pamiec('kolejka', [...kolejka(), { sciezka, dane, opis, czas: Date.now() }]); }
+async function wyslijKolejke() {
+  if (stan.podglad) return;
+  const lista = kolejka();
+  if (!lista.length) return;
+  const zostaje = [];
+  for (const z of lista) {
+    try { await api('POST', z.sciezka, z.dane); }
+    catch (e) {
+      if (e.kod === 0 || e.kod === 401 || e.kod >= 500) zostaje.push(z);
+      else komunikat(`Nie udało się wysłać: ${z.opis}. ${e.message}`);
+    }
+  }
+  pamiec('kolejka', zostaje);
+  if (zostaje.length < lista.length) komunikat('Wysłano zapisane w telefonie: ' + (lista.length - zostaje.length));
+}
+window.addEventListener('online', wyslijKolejke);
+const wKolejce = (wizyta) => kolejka().some((z) => z.dane && z.dane.wizyta === wizyta && z.sciezka === '/raport');
+
+// ------------------------------------------------------------ okno potwierdzenia
+function okno(html) {
+  $('#okno-tresc').innerHTML = html;
+  $('#okno').hidden = false;
+  const pierwszy = $('#okno-tresc button, #okno-tresc textarea');
+  if (pierwszy) pierwszy.focus();
+}
+function zamknijOkno() { $('#okno').hidden = true; $('#okno-tresc').innerHTML = ''; }
+function potwierdz(tytul, tresc, tak = 'Tak', klasa = 'btn-zielony') {
+  return new Promise((ok) => {
+    okno(`<h2>${tytul}</h2>${tresc}<div class="przyciski">
+      <button class="btn ${klasa}" type="button" data-wynik="1">${h(tak)}</button>
+      <button class="btn btn-jasny" type="button" data-wynik="0">Nie, wróć</button></div>`);
+    $('#okno-tresc').onclick = (e) => {
+      const b = e.target.closest('[data-wynik]');
+      if (!b) return;
+      const tekst = $('#okno-tresc textarea') ? $('#okno-tresc textarea').value : '';
+      zamknijOkno();
+      ok(b.dataset.wynik === '1' ? (tekst || true) : false);
+    };
+  });
+}
+$('#okno').addEventListener('click', (e) => { if (e.target.id === 'okno') zamknijOkno(); });
+
+function ekranSukcesu(tytul, html, porazka = false, dalej = '#/moje') {
+  const el = document.createElement('div');
+  el.className = 'sukces' + (porazka ? ' porazka' : '');
+  el.setAttribute('role', 'alertdialog');
+  el.innerHTML = `<div class="znak" aria-hidden="true">${porazka ? '✕' : '✓'}</div><h2>${tytul}</h2>${html}
+    <button class="btn" type="button">OK</button>`;
+  document.body.appendChild(el);
+  $('button', el).focus();
+  $('button', el).onclick = () => { el.remove(); if (location.hash === dalej) pokaz(); else location.hash = dalej; };
+}
+
+// ------------------------------------------------------------ układ ekranu
+function uklad(tytul, { zakladka = null, wstecz = false, menu = true } = {}) {
+  document.title = tytul + ' – Almach';
+  $('#gora').hidden = false;
+  $('#tytul').textContent = tytul;
+  $('#wstecz').hidden = !wstecz;
+  $('#dol').hidden = false;
+  $$('#dol a').forEach((a) => a.classList.toggle('aktywna', a.dataset.zakladka === zakladka));
+  window.scrollTo(0, 0);
+}
+function bezUkladu() { $('#gora').hidden = true; $('#dol').hidden = true; }
+function bladEkranu(e) {
+  if (e.kod === 401) return;
+  ekran.innerHTML = `<div class="blad">${h(e.message)}</div><div class="przyciski">
+    <button class="btn" type="button" data-akcja="odswiez">Spróbuj jeszcze raz</button></div>`;
+}
+function licznikPropozycji(n) {
+  const b = $('#licznik-prop');
+  b.hidden = !n; b.textContent = n || '';
+}
+
+// Podgląd aplikacji przez biuro (tylko odczyt): pasek na górze z przyciskiem powrotu
+function pokazPodglad() {
+  if (!stan.podglad || document.getElementById('podglad')) return;
+  const el = document.createElement('div');
+  el.id = 'podglad';
+  el.className = 'pasek-podglad';
+  el.innerHTML = `<span>Podgląd: ${h(stan.ja.imie)} ${h(stan.ja.nazwisko)} · tylko do odczytu</span><button type="button" data-akcja="koniec-podgladu">Wróć do biura</button>`;
+  document.body.prepend(el);
+}
+
+// ------------------------------------------------------------ logowanie
+async function ekranStart() {
+  bezUkladu();
+  ekran.innerHTML = '<p class="ladowanie">Wczytuję…</p>';
+  let me;
+  try { me = await api('GET', '/me'); } catch (e) { me = pamiec('c:/me') || { stan: 'telefon' }; }
+  stan.telefonBiura = me.telefonBiura || stan.telefonBiura;
+  if (me.stan === 'zalogowana' && me.ja.rola !== 'opiekunka') location.href = '/biuro.html';
+  else if (me.stan === 'zalogowana' && me.podglad) { stan.ja = me.ja; stan.podglad = true; pokazPodglad(); location.hash = '#/moje'; }
+  else if (me.stan === 'zalogowana') { stan.ja = me.ja; stan.vapid = me.vapid; location.hash = '#/moje'; }
+  else if (me.stan === 'ustaw_pin') location.hash = '#/ustaw-pin';
+  else if (me.stan === 'pin') location.hash = '#/pin';
+  else location.hash = '#/telefon';
+}
+
+const logo = () => `<div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9Ijk2IiBmaWxsPSIjMGY1YzU1Ii8+PHBhdGggZD0iTTI1NiAzOTJjLTggMC0xNi0zLTIyLTlMMTQwIDI5MGMtMzQtMzQtMzQtODkgMC0xMjIgMzMtMzMgODYtMzMgMTE2IDAgMzAtMzMgODMtMzMgMTE2IDAgMzQgMzMgMzQgODggMCAxMjJsLTk0IDkzYy02IDYtMTQgOS0yMiA5eiIgZmlsbD0iI2ZmZiIvPjx0ZXh0IHg9IjI1NiIgeT0iMzAwIiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMwZjVjNTUiPkE8L3RleHQ+PC9zdmc+Cg==" alt=""><h1>Almach</h1></div>`;
+
+function ekranTelefon() {
+  bezUkladu();
+  ekran.innerHTML = `<div class="logowanie">${logo()}
+    <form id="f-tel"><label class="pole" for="tel">Twój numer telefonu</label>
+    <input id="tel" type="tel" inputmode="numeric" autocomplete="tel" class="duze-pole" placeholder="600 100 200" value="${h(stan.telefon)}" required>
+    <div id="blad"></div>
+    <div class="przyciski"><button class="btn" type="submit">Dalej</button></div>
+    <p class="szary">Wyślemy SMS z kodem. Kod wpisujesz tylko raz na tym telefonie, potem wystarczy PIN.</p></form></div>`;
+  $('#f-tel').onsubmit = async (e) => {
+    e.preventDefault();
+    stan.telefon = $('#tel').value;
+    try { await api('POST', '/login/start', { telefon: stan.telefon }); location.hash = '#/kod'; }
+    catch (err) { $('#blad').innerHTML = `<div class="blad">${h(err.message)}</div>`; }
+  };
+}
+
+function ekranKod() {
+  bezUkladu();
+  if (!stan.telefon) { location.hash = '#/telefon'; return; }
+  ekran.innerHTML = `<div class="logowanie">${logo()}
+    <form id="f-kod"><label class="pole" for="kod">Wpisz kod z SMS-a</label>
+    <input id="kod" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="duze-pole" required>
+    <div id="blad"></div>
+    <div class="przyciski"><button class="btn" type="submit">Zaloguj</button>
+    <button class="btn btn-jasny" type="button" data-akcja="idz" data-cel="#/telefon">Nie przyszedł SMS – wyślij jeszcze raz</button></div></form></div>`;
+  $('#kod').focus();
+  $('#f-kod').onsubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const r = await api('POST', '/login/verify', { telefon: stan.telefon, kod: $('#kod').value });
+      location.hash = r.ustawPin ? '#/ustaw-pin' : '#/start';
+    } catch (err) {
+      $('#blad').innerHTML = `<div class="blad">${h(err.message)}</div>`;
+      if (err.dane && err.dane.nowyKod) setTimeout(() => (location.hash = '#/telefon'), 2000);
+    }
+  };
+}
+
+function klawiaturaPin(tytul, opis, gotowe) {
+  let pin = '';
+  ekran.innerHTML = `<div class="logowanie">${logo()}<h2 class="srodek">${tytul}</h2><p class="szary">${opis}</p>
+    <div class="pin-kropki" aria-live="polite">${'<span></span>'.repeat(4)}</div><div id="blad"></div>
+    <div class="klawiatura">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" data-cyfra="${n}">${n}</button>`).join('')}
+    <button type="button" data-cyfra="x" aria-label="Usuń">⌫</button><button type="button" data-cyfra="0">0</button><span></span></div></div>`;
+  const kropki = () => $$('.pin-kropki span').forEach((s, i) => s.classList.toggle('pelna', i < pin.length));
+  $('.klawiatura').onclick = async (e) => {
+    const b = e.target.closest('[data-cyfra]');
+    if (!b) return;
+    if (b.dataset.cyfra === 'x') pin = pin.slice(0, -1);
+    else if (pin.length < 4) pin += b.dataset.cyfra;
+    kropki();
+    if (pin.length === 4) {
+      const p = pin; pin = '';
+      const blad = await gotowe(p);
+      kropki();
+      if (blad) $('#blad').innerHTML = `<div class="blad">${h(blad)}</div>`;
+    }
+  };
+}
+
+function ekranPin() {
+  bezUkladu();
+  klawiaturaPin('Wpisz PIN', 'Twoje 4 cyfry.', async (pin) => {
+    try { await api('POST', '/login/pin', { pin }); location.hash = '#/start'; }
+    catch (e) { return e.message; }
+  });
+  ekran.insertAdjacentHTML('beforeend', `<div class="przyciski"><button class="btn btn-jasny" type="button" data-akcja="idz" data-cel="#/telefon">Nie pamiętam PIN-u – zaloguj SMS-em</button></div>`);
+}
+
+function ekranUstawPin() {
+  bezUkladu();
+  let pierwszy = null;
+  const krok = () => klawiaturaPin(pierwszy ? 'Wpisz PIN jeszcze raz' : 'Ustaw swój PIN',
+    pierwszy ? 'Dla pewności.' : 'Wymyśl 4 cyfry. Będziesz je wpisywać przy każdym otwarciu aplikacji.', async (pin) => {
+      if (!pierwszy) { pierwszy = pin; krok(); return null; }
+      if (pin !== pierwszy) { pierwszy = null; krok(); return 'PIN-y się różnią. Zacznij od nowa.'; }
+      try { await api('POST', '/pin/set', { pin }); location.hash = '#/start'; }
+      catch (e) { pierwszy = null; krok(); return e.message; }
+    });
+  krok();
+}
+
+// ------------------------------------------------------------ powiadomienia push
+const pushMozliwy = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && !!stan.vapid;
+const kluczVapid = () => { const b = atob(stan.vapid.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - stan.vapid.length % 4) % 4)); return Uint8Array.from(b, (c) => c.charCodeAt(0)); };
+async function zapiszSubskrypcje() {
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: kluczVapid() });
+  await api('POST', '/push', { subskrypcja: sub.toJSON() });
+}
+async function wlaczPowiadomienia() {
+  if (!pushMozliwy()) { komunikat('Ten telefon nie obsługuje powiadomień. Dodaj aplikację do ekranu głównego.'); return; }
+  const zgoda = await Notification.requestPermission();
+  if (zgoda !== 'granted') { komunikat('Powiadomienia są wyłączone w ustawieniach telefonu.'); pokaz(); return; }
+  try { await zapiszSubskrypcje(); komunikat('Powiadomienia włączone.'); } catch (e) { komunikat('Nie udało się włączyć powiadomień.'); }
+  pokaz();
+}
+let subskrypcjaOdswiezona = false;
+function odswiezSubskrypcje() {
+  if (stan.podglad || subskrypcjaOdswiezona || !pushMozliwy() || Notification.permission !== 'granted') return;
+  subskrypcjaOdswiezona = true;
+  zapiszSubskrypcje().catch(() => {});
+}
+const zachetaPush = () => pushMozliwy() && Notification.permission === 'default' && !pamiec('push-pozniej')
+  ? `<div class="info"><h3>Włącz powiadomienia</h3><p>Dowiesz się od razu o nowych wolnych wizytach i zmianach w grafiku.</p>
+     <div class="przyciski przyciski-2"><button class="btn" type="button" data-akcja="push">Włącz</button>
+     <button class="btn btn-jasny" type="button" data-akcja="push-pozniej">Nie teraz</button></div></div>` : '';
+
+const KLUCZ = '<span class="znaczek znaczek-klucz">🔑 Potrzebny klucz</span> ';
+
+// ------------------------------------------------------------ Moje wizyty
+function kartaWizyty(w, dodatek = '') {
+  return `<a class="karta karta-wizyta" href="#/wizyta/${w.id}">
+    <div class="godzina">${h(w.od)}<small>do ${h(w.do)}</small></div>
+    <div><div class="kto">${h(w.imie)} ${h(w.nazwisko)}</div><div class="gdzie">${h(w.adres)}</div>${w.klucz ? KLUCZ : ''}${dodatek}</div>
+    <div class="strzalka" aria-hidden="true">›</div></a>`;
+}
+
+// Wspólna góra „Moje wizyty” (lista i kalendarz): powiadomienia, propozycje biura, raporty do uzupełnienia
+function naglowekMoje(d) {
+  const doRaportu = d.wizyty.filter((w) => w.minela && !w.raport && !wKolejce(w.id));
+  let html = zachetaPush();
+  if (d.propozycje) {
+    html += `<a class="karta pakiet" href="#/wolne"><h3>Biuro proponuje Ci wizyty: ${d.propozycje}</h3>
+      <p class="szary">Zobacz w „Wolne wizyty”. Decyzja należy do Ciebie.</p></a>`;
+  }
+  if (doRaportu.length) {
+    html += `<div class="uwaga"><h3>Do uzupełnienia: ${doRaportu.length} ${doRaportu.length === 1 ? 'raport' : 'raporty'}</h3>
+      <p>Po wizycie wpisz godziny i co zostało zrobione.</p></div>`;
+    html += doRaportu.map((w) => kartaWizyty(w, `<span class="znaczek znaczek-uwaga">${h(krotko(w.dzien))} – wypełnij raport</span>`)).join('');
+  }
+  return html;
+}
+
+async function ekranMoje() {
+  uklad('Moje wizyty', { zakladka: 'moje' });
+  pamiec('widok-moje', 'lista');
+  ladowanie();
+  wyslijKolejke();
+  let d;
+  try { d = await api('GET', '/moje'); } catch (e) { return bladEkranu(e); }
+  licznikPropozycji(d.propozycje);
+  stan.gielda = d.gielda;
+  odswiezSubskrypcje();
+  const dzis = d.dzis || dzisIso();
+  const granica = iso(new Date(data(dzis).getTime() + 14 * 86400000));
+  const wszystkie = d.wizyty.filter((w) => w.dzien >= dzis);
+  const dalej = stan.calyGrafik ? wszystkie : wszystkie.filter((w) => w.dzien < granica);
+  let html = przelacznikWidoku('lista') + naglowekMoje(d);
+  for (const n of d.nieobecnosci) {
+    html += `<div class="info">Wolne: ${h(krotko(n.od))}${n.do_dnia !== n.od ? ' – ' + h(krotko(n.do_dnia)) : ''}${n.typ === 'urlop' ? ' (urlop)' : ''}</div>`;
+  }
+  const dni = grupuj(dalej, 'dzien');
+  if (!dalej.length) html += '<p class="pusto">Nie masz zaplanowanych wizyt.<br>Zajrzyj do „Wolne wizyty”.</p>';
+  for (const [dzien, lista] of Object.entries(dni)) {
+    html += `<div class="dzien${dzien === dzis ? ' dzis' : ''}">${h(nazwaDnia(dzien))}</div>`;
+    html += lista.map((w) => kartaWizyty(w,
+      w.raport ? '<span class="znaczek znaczek-ok">Raport wysłany ✓</span>'
+        : wKolejce(w.id) ? '<span class="znaczek znaczek-uwaga">Raport czeka na internet</span>' : '')).join('');
+  }
+  if (dalej.length < wszystkie.length) {
+    html += `<div class="przyciski"><button class="btn btn-jasny" type="button" data-akcja="caly-grafik">Pokaż dalsze wizyty (${wszystkie.length - dalej.length})</button></div>`;
+  }
+  if (wszystkie.length) html += przyciskOddajKilka();
+  ekran.innerHTML = html;
+}
+
+// ------------------------------------------------------------ Szczegóły wizyty
+function kartaPodopiecznego(k) {
+  if (!k) return '<p class="szary">Karta podopiecznego nie jest dostępna.</p>';
+  let html = '<dl class="dane">';
+  if (k.telefon) html += `<dt>Telefon</dt><dd><a href="${telLink(k.telefon)}">${h(k.telefon)}</a></dd>`;
+  for (const [a, b] of k.kontakty || []) html += `<dt>${h(a)}</dt><dd>${/\d{3}/.test(b) ? `<a href="${telLink(b)}">${h(b)}</a>` : h(b)}</dd>`;
+  html += '</dl>';
+  if ((k.leki || []).length) html += `<h3 class="odstep">Leki</h3><ul class="lista">${k.leki.map(([g, o]) => `<li><b>${h(g)}</b> – ${h(o)}</li>`).join('')}</ul>`;
+  if ((k.zdrowie || []).length) html += `<h3 class="odstep">Zdrowie – ważne</h3><ul class="lista">${k.zdrowie.map((z) => `<li>${h(z)}</li>`).join('')}</ul>`;
+  if ((k.inne || []).length) html += `<dl class="dane">${k.inne.map(([a, b]) => `<dt>${h(a)}</dt><dd>${h(b)}</dd>`).join('')}</dl>`;
+  return html;
+}
+const adresPelny = (p) => `${p.ulica} ${p.nr_domu}${p.nr_mieszkania ? '/' + p.nr_mieszkania : ''}, ${p.miasto}`;
+
+async function ekranWizyta(id) {
+  uklad('Wizyta', { zakladka: 'moje', wstecz: true });
+  ladowanie();
+  let d;
+  try { d = await api('GET', '/wizyta/' + id); } catch (e) { return bladEkranu(e); }
+  stan.dane.wizyta = d;
+  const w = d.wizyta;
+  $('#tytul').textContent = `${w.imie} ${w.nazwisko}`;
+  const minutDoStartu = (startWizyty(w) - new Date()) / 60000;
+  const naMiejscu = minutDoStartu < 90 && !w.minela;
+  let html = `<div class="karta"><div class="godzina">${h(w.od)}–${h(w.do)}</div>
+    <p class="szary">${h(nazwaDnia(w.dzien))}</p>
+    <p><b>${h(adresPelny(w))}</b></p>
+    ${w.klucz ? '<p class="uwaga">🔑 <b>Potrzebny klucz.</b> Gdzie jest klucz – zobacz kartę podopiecznego albo zapytaj biuro.</p>' : ''}
+    <a class="btn btn-jasny btn-maly" href="${mapa(adresPelny(w))}" target="_blank" rel="noopener">Pokaż na mapie</a>
+    ${w.komentarz ? `<p class="info">${h(w.komentarz)}</p>` : ''}</div>`;
+  if (d.raport) {
+    html += `<div class="info"><b>Raport wysłany ✓</b><br>Wejście ${h(d.raport.wejscie)}, wyjście ${h(d.raport.wyjscie)}</div>`;
+  } else if (wKolejce(w.id)) {
+    html += '<div class="uwaga">Raport jest zapisany w telefonie i wyśle się, gdy będzie internet.</div>';
+  } else if (minutDoStartu <= 15) {
+    html += `<div class="przyciski"><a class="btn btn-zielony" href="#/raport/${w.id}">Wypełnij raport z wizyty</a></div>`;
+  }
+  for (const z of d.zgloszenia) html += `<div class="uwaga">Zgłoszono o ${h(z.godz)}: ${h(NAZWY_ZGLOSZEN[z.typ] || z.typ)}</div>`;
+  if (naMiejscu || (w.minela && !d.raport && w.dzien === dzisIso())) {
+    html += `<div class="przyciski"><a class="btn btn-czerwony" href="#/zgloszenie/${w.id}">Coś się stało?</a></div>`;
+  }
+  html += `<h2>Karta podopiecznego</h2><div class="karta">${kartaPodopiecznego(d.karta)}</div>
+    <div class="przyciski"><a class="btn btn-jasny" href="#/podopieczny/${w.podopieczny_id}">Zeszyt i grafik podopiecznego</a></div>`;
+  if (w.przyszla && stan.gielda !== false) {
+    html += `<div class="przyciski"><button class="btn btn-czerwony" type="button" data-akcja="oddaj" data-id="${w.id}">Oddaj tę wizytę</button></div>`;
+  }
+  ekran.innerHTML = html;
+}
+
+async function oddaj(id) {
+  const w = stan.dane.wizyta.wizyta;
+  const tak = await potwierdz('Oddać wizytę?', `<p><b>${h(nazwaDnia(w.dzien))}, ${h(w.od)}–${h(w.do)}</b><br>${h(w.imie)} ${h(w.nazwisko)}</p>
+    <p>Wizyta wróci do „Wolnych wizyt” i będzie mogła ją wziąć inna opiekunka.</p>`, 'Tak, oddaję', 'btn-pomarancz');
+  if (!tak) return;
+  try { await api('POST', '/oddaj', { wizyta: Number(id) }); komunikat('Wizyta oddana.'); location.hash = stan.powrot || '#/moje'; }
+  catch (e) { komunikat(e.message); }
+}
+
+// Oddanie kilku wizyt naraz: lista przyszłych wizyt z zaznaczaniem
+const przyciskOddajKilka = (d) => stan.gielda === false || stan.podglad ? ''
+  : `<div class="przyciski"><a class="btn btn-jasny" href="#/oddaj${d ? '?d=' + d : ''}">Oddaj kilka wizyt…</a></div>`;
+
+async function ekranOddaj() {
+  uklad('Oddaj wizyty', { zakladka: 'moje', wstecz: true });
+  ladowanie();
+  let d;
+  try { d = await api('GET', '/moje'); } catch (e) { return bladEkranu(e); }
+  const teraz = new Date();
+  const przyszle = d.wizyty.filter((w) => startWizyty(w) > teraz);
+  const dzien = parametr('d');
+  ekran.innerHTML = `<p>Zaznacz wizyty, których nie możesz wykonać. Wrócą do „Wolnych wizyt” i weźmie je inna opiekunka.</p>
+    ${przyszle.length ? Object.entries(grupuj(przyszle, 'dzien')).map(([dz, l]) => `<div class="dzien" id="dz-${dz}">${h(nazwaDnia(dz))}</div>` +
+      l.map((w) => `<label class="wybor"><input type="checkbox" name="oddaj" value="${w.id}"${dz === dzien && l.length === 1 ? ' checked' : ''}>
+        <span><b>${h(w.od)}–${h(w.do)}</b> ${h(w.imie)} ${h(w.nazwisko)}<br><span class="szary">${h(w.adres)}</span></span></label>`).join('')).join('')
+      : '<p class="pusto">Nie masz przyszłych wizyt do oddania.</p>'}
+    <div class="pasek-akcji"><button class="btn btn-pomarancz" type="button" data-akcja="oddaj-zaznaczone" disabled>Oddaj zaznaczone</button></div>`;
+  $$('input[name=oddaj]:checked').forEach((c) => c.closest('.wybor').classList.add('zaznaczone'));
+  const odswiez = () => { const n = $$('input[name=oddaj]:checked').length; const b = $('[data-akcja=oddaj-zaznaczone]'); if (!b) return; b.disabled = !n; b.textContent = n ? `Oddaj zaznaczone (${n})` : 'Oddaj zaznaczone'; };
+  ekran.addEventListener('change', odswiez);
+  odswiez();
+  stan.dane.doOddania = przyszle;
+  if (dzien && $('#dz-' + dzien)) $('#dz-' + dzien).scrollIntoView({ block: 'start' });
+}
+
+async function oddajZaznaczone() {
+  const ids = $$('input[name=oddaj]:checked').map((c) => Number(c.value));
+  if (!ids.length) return;
+  const lista = (stan.dane.doOddania || []).filter((w) => ids.includes(w.id));
+  const tak = await potwierdz(`Oddać ${ids.length} ${ids.length === 1 ? 'wizytę' : ids.length < 5 ? 'wizyty' : 'wizyt'}?`,
+    `<ul class="lista">${lista.map((w) => `<li><b>${h(krotko(w.dzien))}, ${h(w.od)}–${h(w.do)}</b> ${h(w.nazwisko)}</li>`).join('')}</ul>
+     <p>Wrócą do „Wolnych wizyt” i będzie mogła je wziąć inna opiekunka.</p>`, 'Tak, oddaję', 'btn-pomarancz');
+  if (!tak) return;
+  try {
+    const r = await api('POST', '/oddaj', { wizyty: ids });
+    komunikat(r.oddane === r.zaznaczone ? `Oddano wizyt: ${r.oddane}.` : `Oddano ${r.oddane} z ${r.zaznaczone} – pozostałe już się zaczęły.`);
+    location.hash = stan.powrot || '#/moje';
+  } catch (e) { komunikat(e.message); }
+}
+
+// ------------------------------------------------------------ Zgłoszenia
+const NAZWY_ZGLOSZEN = {
+  nikt_nie_otwiera: 'Nikt nie otwiera', szpital: 'Podopieczny został zabrany do szpitala', odwolana_na_miejscu: 'Rodzina odwołała wizytę na miejscu',
+  odmowa: 'Podopieczny nie chce pomocy', zdarzenie: 'Upadek, zasłabnięcie lub inne zdarzenie', inne: 'Coś innego',
+};
+
+async function wyslijZgloszenie(dane) {
+  try { await api('POST', '/zgloszenie', dane); return true; }
+  catch (e) {
+    if (e.kod === 0) { doKolejki('/zgloszenie', dane, 'zgłoszenie'); return 'kolejka'; }
+    komunikat(e.message); return false;
+  }
+}
+const zadzwon = () => stan.telefonBiura ? `<a class="btn" href="${telLink(stan.telefonBiura)}">📞 Zadzwoń do biura</a>` : '';
+
+
+function ekranZgloszenie(id) {
+  uklad('Coś się stało?', { zakladka: 'moje', wstecz: true });
+  ekran.innerHTML = `<p>Wybierz, co się stało:</p><form id="f-zgl">
+    ${['nikt_nie_otwiera', 'szpital', 'zdarzenie', 'odwolana_na_miejscu', 'odmowa', 'inne'].map((t) => `<label class="wybor"><input type="radio" name="typ" value="${t}" required> ${h(NAZWY_ZGLOSZEN[t])}</label>`).join('')}
+    <p class="szary">Przy upadku lub zasłabnięciu biuro od razu dostaje SMS.</p>
+    <label class="pole" for="opis">Opisz krótko (nie musisz)</label><textarea id="opis"></textarea>
+    <div class="przyciski"><button class="btn btn-pomarancz" type="submit">Wyślij do biura</button>${zadzwon()}</div></form>
+    <p class="szary">W nagłym wypadku dzwoń najpierw pod 112.</p>`;
+  zaznaczanie();
+  $('#f-zgl').onsubmit = async (e) => {
+    e.preventDefault();
+    const wybrany = $('input[name=typ]:checked');
+    if (!wybrany) { komunikat('Wybierz, co się stało.'); return; }
+    const typ = wybrany.value;
+    const r = await wyslijZgloszenie({ wizyta: Number(id), typ, opis: $('#opis').value });
+    if (!r) return;
+    const tekst = typ === 'zdarzenie' ? '<p>Biuro dostało SMS. Jeśli potrzebna jest pomoc medyczna, dzwoń pod <b>112</b>.</p>'
+      : typ === 'nikt_nie_otwiera' ? '<p>Poczekaj chwilę na miejscu i zadzwoń do biura.</p>'
+      : '<p>Biuro się odezwie.</p>';
+    ekranSukcesu(r === 'kolejka' ? 'Zgłoszenie zapisane' : 'Wysłane do biura',
+      `${r === 'kolejka' ? '<p>Nie ma internetu – wyśle się samo, gdy wróci zasięg. Zadzwoń do biura.</p>' : tekst}${zadzwon()}`, false, '#/wizyta/' + id);
+  };
+}
+
+// ------------------------------------------------------------ Raport z wizyty (raz, na koniec)
+const ZWROTY = ['Bez zmian.', 'Posiłek zjedzony.', 'Leki przyjęte.', 'Dobry nastrój.', 'Słabsze samopoczucie.', 'Zakupy zrobione.'];
+
+async function ekranRaport(id) {
+  uklad('Raport z wizyty', { zakladka: 'moje', wstecz: true });
+  let d = stan.dane.wizyta;
+  if (!d || String(d.wizyta.id) !== String(id)) {
+    ladowanie();
+    try { d = await api('GET', '/wizyta/' + id); } catch (e) { return bladEkranu(e); }
+  }
+  const w = d.wizyta;
+  if (d.raport) { location.hash = '#/wizyta/' + id; return; }
+  const szkic = pamiec('raport:' + id) || {};
+  const zazn = new Set(szkic.czynnosci || []);
+  const mowa = window.SpeechRecognition || window.webkitSpeechRecognition;
+  ekran.innerHTML = `<div class="karta"><div class="kto">${h(w.imie)} ${h(w.nazwisko)}</div>
+    <div class="szary">${h(nazwaDnia(w.dzien))}, w grafiku ${h(w.od)}–${h(w.do)}</div></div>
+    <form id="f-rap">
+    <div class="dwa"><div><label class="pole" for="wej">Weszłam o</label><input id="wej" type="time" value="${h(szkic.wejscie || w.od)}" required></div>
+    <div><label class="pole" for="wyj">Wyszłam o</label><input id="wyj" type="time" value="${h(szkic.wyjscie || w.do)}" required></div></div>
+    <h2>Co zrobiłam</h2>
+    ${d.jakOstatnio && d.jakOstatnio.length ? '<div class="przyciski"><button class="btn btn-jasny" type="button" id="jak-ostatnio">Jak ostatnio</button></div>' : ''}
+    ${d.zakres.length ? d.zakres.map((c) => `<label class="wybor${zazn.has(c.id) ? ' zaznaczone' : ''}"><input type="checkbox" name="cz" value="${c.id}"${zazn.has(c.id) ? ' checked' : ''}> ${h(c.nazwa)}</label>`).join('')
+      : '<p class="szary">Biuro nie wpisało jeszcze zakresu czynności.</p>'}
+    <h2>Jak minęła wizyta</h2>
+    <div class="zwroty">${ZWROTY.map((z) => `<button type="button" data-zwrot="${h(z)}">${h(z)}</button>`).join('')}</div>
+    <textarea id="przebieg" placeholder="Możesz napisać albo podyktować">${h(szkic.przebieg || '')}</textarea>
+    <p class="szary">Możesz też dyktować mikrofonem na klawiaturze telefonu 🎤 – dotknij pola wyżej, a potem ikony mikrofonu na klawiaturze.</p>
+    ${mowa ? '<div class="przyciski"><button class="btn btn-jasny" type="button" id="dyktuj">🎤 Podyktuj</button></div>' : ''}
+    <label class="wybor zaznaczone"><input type="checkbox" id="rodzina" checked> Rodzina może przeczytać ten opis</label>
+    <label class="wybor"><input type="checkbox" id="zeszyt"> Dopisz opis do zeszytu podopiecznego (zobaczą inne opiekunki)</label>
+    <div id="blad"></div>
+    <div class="przyciski"><button class="btn btn-zielony" type="submit">Zatwierdź raport</button></div></form>`;
+  zaznaczanie();
+  const zapiszSzkic = () => pamiec('raport:' + id, {
+    wejscie: $('#wej').value, wyjscie: $('#wyj').value, przebieg: $('#przebieg').value,
+    czynnosci: $$('input[name=cz]:checked').map((c) => Number(c.value)),
+  });
+  $('#f-rap').addEventListener('input', zapiszSzkic);
+  $('#f-rap').addEventListener('change', zapiszSzkic);
+  $('.zwroty').onclick = (e) => {
+    const b = e.target.closest('[data-zwrot]');
+    if (!b) return;
+    const t = $('#przebieg');
+    t.value = (t.value.trim() ? t.value.trim() + ' ' : '') + b.dataset.zwrot;
+    zapiszSzkic();
+  };
+  if ($('#jak-ostatnio')) $('#jak-ostatnio').onclick = () => {
+    const ost = new Set(d.jakOstatnio);
+    $$('input[name=cz]').forEach((c) => { c.checked = ost.has(Number(c.value)); c.closest('.wybor').classList.toggle('zaznaczone', c.checked); });
+    zapiszSzkic();
+    komunikat('Zaznaczono jak ostatnio – popraw, jeśli trzeba.');
+  };
+  if (mowa) {
+    let rozp = null;
+    $('#dyktuj').onclick = () => {
+      if (rozp) { rozp.stop(); return; }
+      rozp = new mowa();
+      rozp.lang = 'pl-PL';
+      rozp.interimResults = false;
+      rozp.continuous = true;
+      rozp.onresult = (e) => {
+        const t = $('#przebieg');
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) t.value = (t.value.trim() ? t.value.trim() + ' ' : '') + e.results[i][0].transcript.trim();
+        }
+        zapiszSzkic();
+      };
+      rozp.onend = () => { rozp = null; $('#dyktuj').textContent = '🎤 Podyktuj'; };
+      rozp.onerror = (e) => komunikat(e.error === 'not-allowed' || e.error === 'service-not-allowed'
+        ? 'Brak zgody na mikrofon. Użyj mikrofonu na klawiaturze albo zezwól na mikrofon w ustawieniach strony.'
+        : 'Dyktowanie nie zadziałało. Użyj mikrofonu na klawiaturze telefonu.');
+      rozp.start();
+      $('#dyktuj').textContent = '⏹ Zakończ dyktowanie';
+    };
+  }
+  $('#f-rap').onsubmit = async (e) => {
+    e.preventDefault();
+    const dane = {
+      wizyta: Number(id), wejscie: $('#wej').value, wyjscie: $('#wyj').value, przebieg: $('#przebieg').value,
+      czynnosci: $$('input[name=cz]:checked').map((c) => Number(c.value)),
+      rodzina: $('#rodzina').checked, doZeszytu: $('#zeszyt').checked,
+    };
+    if (!dane.wejscie || !dane.wyjscie || dane.wyjscie <= dane.wejscie) {
+      $('#blad').innerHTML = '<div class="blad">Godzina wyjścia musi być po godzinie wejścia.</div>'; return;
+    }
+    try {
+      await api('POST', '/raport', dane);
+      localStorage.removeItem('raport:' + id);
+      stan.dane.wizyta = null;
+      ekranSukcesu('Raport wysłany', `<p>${h(w.imie)} ${h(w.nazwisko)}, ${h(dane.wejscie)}–${h(dane.wyjscie)}</p>`);
+    } catch (err) {
+      if (err.kod === 0) {
+        doKolejki('/raport', dane, `raport ${w.nazwisko} ${krotko(w.dzien)}`);
+        localStorage.removeItem('raport:' + id);
+        ekranSukcesu('Raport zapisany w telefonie', '<p>Nie ma internetu. Raport wyśle się sam, gdy wróci zasięg.</p>');
+      } else $('#blad').innerHTML = `<div class="blad">${h(err.message)}</div>`;
+    }
+  };
+}
+
+// Podświetlanie zaznaczonych pól wyboru
+function zaznaczanie() {
+  $$('input[type=radio]:checked', ekran).forEach((r) => r.closest('.wybor').classList.add('zaznaczone'));
+}
+// Dotknięcie pola daty od razu otwiera kalendarz (tam, gdzie przeglądarka to umie)
+ekran.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.matches && t.matches('input[type=date]') && typeof t.showPicker === 'function') { try { t.showPicker(); } catch (x) { /* nic */ } }
+});
+ekran.addEventListener('change', (e) => {
+  if (e.target.type === 'checkbox') e.target.closest('.wybor')?.classList.toggle('zaznaczone', e.target.checked);
+  if (e.target.type === 'radio') $$(`input[name="${e.target.name}"]`).forEach((r) => r.closest('.wybor')?.classList.toggle('zaznaczone', r.checked));
+});
+
+// ------------------------------------------------------------ Wolne wizyty (giełda)
+function powodBlokady(w) {
+  if (w.nieobecna) return 'Masz wtedy wolne.';
+  if (w.kolizja) return 'Masz wtedy wizytę: ' + w.kolizja + '.';
+  return '';
+}
+
+async function ekranWolne() {
+  uklad('Wolne wizyty', { zakladka: 'wolne' });
+  ladowanie();
+  let d;
+  try { d = await api('GET', '/wolne'); } catch (e) { return bladEkranu(e); }
+  if (d.wylaczona) {
+    ekran.innerHTML = `<div class="info"><h3>Wolne wizyty – wkrótce tutaj</h3><p>${h(d.wylaczona)}</p></div><div class="przyciski">${zadzwon()}</div>`;
+    return;
+  }
+  stan.dane.wolne = d.wizyty;
+  const dlaMnie = d.wizyty.filter((w) => w.dla_mnie);
+  const reszta = d.wizyty.filter((w) => !w.dla_mnie);
+  licznikPropozycji(dlaMnie.length);
+  let html = '';
+  if (dlaMnie.length) {
+    const godzSuma = dlaMnie.reduce((s, w) => s + parseFloat(w.godz), 0);
+    html += `<div class="karta pakiet"><h3>Propozycja od biura: ${dlaMnie.length} ${dlaMnie.length === 1 ? 'wizyta' : 'wizyt'}, ${godz(godzSuma)}</h3>
+      <p>Odznacz te, których nie chcesz. Odznaczone wrócą do wszystkich opiekunek.</p>`;
+    for (const [nazw, lista] of Object.entries(grupuj(dlaMnie, 'nazwisko'))) {
+      html += `<h3 class="odstep">${h(lista[0].inicjal)}. ${h(nazw)} – ${h(lista[0].ulica)}</h3>`;
+      html += lista.map((w) => {
+        const p = powodBlokady(w);
+        return `<label class="wybor${p ? '' : ' zaznaczone'}"><input type="checkbox" name="pak" value="${w.id}"${p ? ' disabled' : ' checked'}>
+          <span><b>${h(krotko(w.dzien))}, ${h(w.od)}–${h(w.do)}</b>${p ? `<br><span class="powod">${h(p)}</span>` : ''}</span></label>`;
+      }).join('');
+    }
+    html += `<div class="przyciski"><button class="btn btn-zielony" type="button" data-akcja="bierz-pakiet">Biorę zaznaczone</button>
+      <button class="btn btn-jasny" type="button" data-akcja="odrzuc-pakiet">Nie biorę żadnej</button></div></div>`;
+  }
+  if (!reszta.length && !dlaMnie.length) html += '<p class="pusto">Teraz nie ma wolnych wizyt.<br>Damy znać, gdy się pojawią.</p>';
+  for (const [dzien, lista] of Object.entries(grupuj(reszta, 'dzien'))) {
+    html += `<div class="dzien">${h(nazwaDnia(dzien))}</div>`;
+    html += lista.map((w) => {
+      const p = powodBlokady(w);
+      return `<div class="karta wolna${p ? ' zablokowana' : ''}">
+        <div><div class="godzina">${h(w.od)}–${h(w.do)}</div>
+        <div class="kto">${h(w.inicjal)}. ${h(w.nazwisko)}</div><div class="gdzie">${h(w.ulica)}${w.rejon ? ' · ' + h(w.rejon) : ''}</div>${w.klucz ? KLUCZ : ''}
+        ${w.pilna ? '<span class="znaczek znaczek-pilne">Pilne</span>' : ''}${w.komentarz ? ` <span class="szary">${h(w.komentarz)}</span>` : ''}</div>
+        ${p ? (w.zapytano ? '<span class="znaczek znaczek-uwaga">Zapytano biuro</span>'
+          : `<button class="btn btn-pomarancz" type="button" data-akcja="zapytaj" data-id="${w.id}">Zapytaj biuro</button>`)
+          : `<button class="btn btn-zielony" type="button" data-akcja="bierz" data-id="${w.id}">Biorę</button>`}
+        ${p ? `<div class="powod">${h(p)}</div>` : ''}</div>`;
+    }).join('');
+  }
+  ekran.innerHTML = html;
+  zaznaczanie();
+}
+
+const wolna = (id) => (stan.dane.wolne || []).find((w) => String(w.id) === String(id));
+
+async function przyjmij(ids, odrzucone = []) {
+  let r;
+  try { r = await api('POST', '/przyjmij', { wizyty: ids }); }
+  catch (e) { komunikat(e.message); return; }
+  if (odrzucone.length) { try { await api('POST', '/odrzuc', { wizyty: odrzucone }); } catch (e) { /* nic */ } }
+  if (!r.przyjete) {
+    ekranSukcesu('Ktoś był szybszy', '<p>Tę wizytę wzięła już inna opiekunka.</p>', true, '#/wolne');
+    return;
+  }
+  const lista = r.wizyty.map((w) => `<p><b>${h(krotko(w.dzien))}, ${h(w.od)}–${h(w.do)}</b> · ${h(w.imie)} ${h(w.nazwisko)}</p>`).join('');
+  const brak = r.zaznaczone - r.przyjete;
+  ekranSukcesu(r.przyjete === 1 ? 'Wizyta jest Twoja' : `Wizyty są Twoje (${r.przyjete})`,
+    lista + (brak ? `<p>${brak} ${brak === 1 ? 'wizytę wzięła' : 'wizyt wzięły'} już inne opiekunki.</p>` : '') + '<p>Są już w „Moje wizyty”.</p>');
+}
+
+async function bierz(id) {
+  const w = wolna(id);
+  if (!w) return;
+  const tak = await potwierdz('Bierzesz tę wizytę?', `<p class="godzina">${h(w.od)}–${h(w.do)}</p>
+    <p><b>${h(nazwaDnia(w.dzien))}</b><br>${h(w.inicjal)}. ${h(w.nazwisko)}, ${h(w.ulica)}</p>`, 'Tak, biorę');
+  if (tak) przyjmij([Number(id)]);
+}
+
+async function bierzPakiet() {
+  const wszystkie = $$('input[name=pak]').map((c) => Number(c.value));
+  const tak = $$('input[name=pak]:checked').map((c) => Number(c.value));
+  if (!tak.length) { komunikat('Nic nie zaznaczono.'); return; }
+  const nie = wszystkie.filter((x) => !tak.includes(x));
+  const ok = await potwierdz(`Bierzesz ${tak.length} ${tak.length === 1 ? 'wizytę' : 'wizyt'}?`,
+    nie.length ? `<p>${nie.length} odznaczonych wróci do wszystkich opiekunek.</p>` : '', 'Tak, biorę');
+  if (ok) przyjmij(tak, nie);
+}
+
+async function odrzucPakiet() {
+  const ids = $$('input[name=pak]').map((c) => Number(c.value));
+  const ok = await potwierdz('Nie bierzesz żadnej?', '<p>Wizyty z propozycji wrócą do wszystkich opiekunek.</p>', 'Tak, nie biorę', 'btn-pomarancz');
+  if (!ok) return;
+  try { await api('POST', '/odrzuc', { wizyty: ids }); komunikat('Propozycja odrzucona.'); pokaz(); } catch (e) { komunikat(e.message); }
+}
+
+async function zapytaj(id) {
+  const w = wolna(id);
+  const tekst = await potwierdz('Zapytać biuro?', `<p>${h(krotko(w.dzien))}, ${h(w.od)}–${h(w.do)} · ${h(w.inicjal)}. ${h(w.nazwisko)}</p>
+    <p class="szary">${h(powodBlokady(w))}</p><label class="pole" for="powod">Co chcesz przekazać? (nie musisz)</label>
+    <textarea id="powod" placeholder="np. mogę przesunąć inną wizytę"></textarea>`, 'Wyślij pytanie', 'btn-pomarancz');
+  if (!tekst) return;
+  try { await api('POST', '/prosba', { wizyta: Number(id), powod: typeof tekst === 'string' ? tekst : '' }); komunikat('Biuro dostało pytanie.'); pokaz(); }
+  catch (e) { komunikat(e.message); }
+}
+
+// ------------------------------------------------------------ Podopieczni
+async function ekranPodopieczni() {
+  uklad('Moi podopieczni', { zakladka: 'podopieczni' });
+  ladowanie();
+  let d;
+  try { d = await api('GET', '/podopieczni'); } catch (e) { return bladEkranu(e); }
+  ekran.innerHTML = d.podopieczni.length ? d.podopieczni.map((p) => `<a class="karta karta-wizyta" href="#/podopieczny/${p.id}">
+      <div class="godzina" aria-hidden="true">🏠</div>
+      <div><div class="kto">${h(p.imie)} ${h(p.nazwisko)}</div><div class="gdzie">${h(p.adres)}</div>
+      ${p.nastepna ? `<div class="szary">Następna wizyta: ${h(krotko(p.nastepna.slice(0, 10)))}, ${h(p.nastepna.slice(11))}</div>` : ''}</div>
+      <div class="strzalka" aria-hidden="true">›</div></a>`).join('')
+    : '<p class="pusto">Tu pojawią się osoby, do których masz wizyty.</p>';
+}
+
+async function ekranPodopieczny(id) {
+  uklad('Podopieczny', { zakladka: 'podopieczni', wstecz: true });
+  ladowanie();
+  let d;
+  try { d = await api('GET', '/podopieczny/' + id); } catch (e) { return bladEkranu(e); }
+  const p = d.podopieczny;
+  $('#tytul').textContent = `${p.imie} ${p.nazwisko}`;
+  const dni = grupuj(d.grafik, 'dzien');
+  ekran.innerHTML = `<div class="karta"><p><b>${h(adresPelny(p))}</b></p>${p.klucz ? KLUCZ : ''}
+      <a class="btn btn-jasny btn-maly" href="${mapa(adresPelny(p))}" target="_blank" rel="noopener">Pokaż na mapie</a></div>
+    <h2>Karta</h2><div class="karta">${kartaPodopiecznego(d.karta)}</div>
+    <h2>Zeszyt</h2>
+    <form id="f-zeszyt" class="karta"><label class="pole" for="wpis">Nowy wpis</label><textarea id="wpis" placeholder="Informacja dla innych opiekunek i biura"></textarea>
+      <div class="przyciski"><button class="btn" type="submit">Dodaj wpis</button></div></form>
+    <div id="zeszyt">${zeszytHtml(d.zeszyt)}</div>
+    <h2>Grafik – kto przychodzi</h2><div class="karta">${Object.entries(dni).map(([dz, l]) => `<div class="dzien">${h(nazwaDnia(dz))}</div>` +
+      l.map((w) => `<div class="grafik-wiersz${w.moja ? ' moja' : ''}"><span>${h(w.od)}–${h(w.do)}</span><span>${w.moja ? 'Ty' : h(w.kto || 'wolna')}</span></div>`).join('')).join('') || '<p class="szary">Brak wizyt.</p>'}</div>`;
+  $('#f-zeszyt').onsubmit = async (e) => {
+    e.preventDefault();
+    const t = $('#wpis').value.trim();
+    if (!t) return;
+    try { const r = await api('POST', `/podopieczny/${id}/zeszyt`, { tresc: t }); $('#wpis').value = ''; $('#zeszyt').innerHTML = zeszytHtml(r.zeszyt); komunikat('Dodano wpis.'); }
+    catch (err) { komunikat(err.message); }
+  };
+}
+const zeszytHtml = (lista) => lista.length ? lista.map((z) => `<div class="wpis">${h(z.tresc)}<small>${h(z.autor)} · ${h(krotko(z.kiedy.slice(0, 10)))} ${h(z.kiedy.slice(11))}</small></div>`).join('')
+  : '<p class="szary">Zeszyt jest pusty.</p>';
+
+// ------------------------------------------------------------ Zakładka Biuro: telefon do biura, godziny, wolne dni, wylogowanie
+function ekranWiecej() {
+  uklad('Biuro i moje sprawy', { zakladka: 'biuro' });
+  ekran.innerHTML = `<div class="przyciski">${zadzwon()}${stan.telefonBiura ? `<p class="szary srodek">Biuro: ${h(stan.telefonBiura)}</p>` : ''}</div>
+    <h2>Moje sprawy</h2><div class="przyciski">
+    <a class="btn btn-jasny" href="#/godziny">Moje godziny</a>
+    <a class="btn btn-jasny" href="#/wolne-dni">Moje wolne dni</a>
+    ${!pushMozliwy() ? '' : Notification.permission === 'granted' ? '<p class="info">Powiadomienia są włączone ✓</p>'
+      : Notification.permission === 'denied' ? '<p class="uwaga">Powiadomienia są zablokowane w ustawieniach telefonu (Ustawienia → Aplikacje → Chrome → Powiadomienia).</p>'
+      : '<button class="btn" type="button" data-akcja="push">Włącz powiadomienia</button>'}
+    <button class="btn btn-jasny" type="button" data-akcja="wyloguj">Wyloguj</button></div>
+    <p class="szary">Zalogowana: ${h(stan.ja ? stan.ja.imie + ' ' + stan.ja.nazwisko : '')}</p>
+    <div class="przyciski"><button class="btn btn-czerwony btn-maly" type="button" data-akcja="zapomnij">To nie jest mój telefon – usuń logowanie</button></div>`;
+}
+
+// Miesiąc: dane z /godziny (wizyty miesiąca, wolne dni) – wspólne dla kalendarza i „Moich godzin”
+const MIES_D = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+const DNI_K = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'];
+const parametr = (n) => new URLSearchParams(location.hash.split('?')[1] || '').get(n) || '';
+const miesiacPrzes = (m, o) => { const [r, mm] = m.split('-').map(Number); const x = new Date(r, mm - 1 + o, 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}`; };
+const dniMiesiaca = (m) => { const [r, mm] = m.split('-').map(Number); return new Date(r, mm, 0).getDate(); };
+const dowPn = (s) => (data(s).getDay() + 6) % 7; // 0 = poniedziałek … 6 = niedziela
+const jestWolne = (wolne, s) => (wolne || []).some((n) => s >= n.od && s <= n.do_dnia);
+async function daneMiesiaca(m) { return api('GET', '/godziny' + (m ? '?miesiac=' + m : '')); }
+function przelacznikWidoku(aktywny) {
+  return `<div class="przelacznik" role="tablist"><a href="#/moje" class="${aktywny === 'lista' ? 'wybrany' : ''}" role="tab">Lista</a>
+    <a href="#/kalendarz" class="${aktywny === 'kalendarz' ? 'wybrany' : ''}" role="tab">Kalendarz</a></div>`;
+}
+
+// Kalendarz miesiąca: siatka pn–nd, weekendy wyróżnione; dotknięcie dnia pokazuje jego wizyty
+async function ekranKalendarz() {
+  uklad('Mój grafik', { zakladka: 'moje' });
+  ladowanie();
+  pamiec('widok-moje', 'kalendarz');
+  wyslijKolejke();
+  let d, moje;
+  try { [d, moje] = await Promise.all([daneMiesiaca(parametr('m')), api('GET', '/moje')]); } catch (e) { return bladEkranu(e); }
+  licznikPropozycji(moje.propozycje);
+  stan.gielda = moje.gielda;
+  odswiezSubskrypcje();
+  const m = d.miesiac, dzis = d.dzis || dzisIso();
+  const poDniach = grupuj(d.wizyty, 'dzien');
+  const ile = dniMiesiaca(m);
+  let wybrany = parametr('d');
+  if (!wybrany || !wybrany.startsWith(m)) wybrany = dzis.startsWith(m) ? dzis : (Object.keys(poDniach)[0] || `${m}-01`);
+  let siatka = DNI_K.map((n, i) => `<div class="kal-naglowek${i >= 5 ? ' weekend' : ''}">${n}</div>`).join('');
+  siatka += '<div class="kal-pusty"></div>'.repeat(dowPn(`${m}-01`));
+  for (let i = 1; i <= ile; i++) {
+    const s = `${m}-${String(i).padStart(2, '0')}`, lista = poDniach[s] || [];
+    const suma = lista.reduce((a, w) => a + parseFloat(w.plan), 0);
+    const kl = ['kal-dzien', dowPn(s) >= 5 ? 'weekend' : '', s === dzis ? 'dzis' : '', s === wybrany ? 'wybrany' : '', lista.length ? 'ma' : '', s < dzis ? 'minal' : ''].filter(Boolean).join(' ');
+    siatka += `<a class="${kl}" href="#/kalendarz?m=${m}&d=${s}" aria-label="${i} ${MIES_D[+m.slice(5) - 1]}: ${lista.length} wizyt">
+      <span class="kal-nr">${i}</span>${lista.length ? `<span class="kal-godz">${godz(suma).replace(' h', 'h')}</span><span class="kal-ile">${lista.length} ${lista.length === 1 ? 'wiz.' : 'wiz.'}</span>`
+        : jestWolne(d.wolne, s) ? '<span class="kal-wolne">wolne</span>' : ''}</a>`;
+  }
+  const wDniu = poDniach[wybrany] || [];
+  const [r, mm] = m.split('-').map(Number);
+  ekran.innerHTML = `${przelacznikWidoku('kalendarz')}${naglowekMoje(moje)}
+    <div class="kal-miesiac"><a class="btn btn-jasny btn-maly" href="#/kalendarz?m=${miesiacPrzes(m, -1)}" aria-label="Poprzedni miesiąc">‹</a>
+      <h2>${MIES_M[mm - 1]} ${r}</h2><a class="btn btn-jasny btn-maly" href="#/kalendarz?m=${miesiacPrzes(m, 1)}" aria-label="Następny miesiąc">›</a></div>
+    <p class="szary srodek">${d.wizyty.length} wizyt · ${godz(d.suma.plan)} w grafiku</p>
+    <div class="kalendarz">${siatka}</div>
+    <div class="dzien${wybrany === dzis ? ' dzis' : ''}">${h(nazwaDnia(wybrany))}</div>
+    ${wDniu.length ? wDniu.map((w) => kartaWizyty({ ...w, raport: w.potwierdzona },
+        w.potwierdzona ? '<span class="znaczek znaczek-ok">Raport wysłany ✓</span>' : w.minela ? '<span class="znaczek znaczek-uwaga">wypełnij raport</span>' : '')).join('')
+      : `<p class="pusto">${jestWolne(d.wolne, wybrany) ? 'Masz wolne.' : 'Brak wizyt tego dnia.'}</p>`}
+    ${wDniu.some((w) => startWizyty(w) > new Date()) ? przyciskOddajKilka(wybrany) : ''}`;
+}
+
+// Moje godziny: tygodnie (pn–nd) z sumą, w środku dni; weekendy wyróżnione
+async function ekranGodziny() {
+  uklad('Moje godziny', { zakladka: 'biuro', wstecz: true });
+  ladowanie();
+  let d;
+  try { d = await daneMiesiaca(parametr('m')); } catch (e) { return bladEkranu(e); }
+  const m = d.miesiac, [r, mm] = m.split('-').map(Number);
+  const tygodnie = [];
+  for (const w of d.wizyty) {
+    const pn = data(w.dzien); pn.setDate(pn.getDate() - dowPn(w.dzien));
+    const k = iso(pn);
+    let t = tygodnie.find((x) => x.k === k);
+    if (!t) tygodnie.push(t = { k, wizyty: [] });
+    t.wizyty.push(w);
+  }
+  const zakres = (k) => { const a = data(k), b = data(k); b.setDate(b.getDate() + 6);
+    return a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${MIES_D[b.getMonth()]}` : `${a.getDate()} ${MIES_D[a.getMonth()]} – ${b.getDate()} ${MIES_D[b.getMonth()]}`; };
+  const html = tygodnie.map((t) => {
+    const plan = t.wizyty.reduce((a, w) => a + parseFloat(w.plan), 0);
+    const dni = grupuj(t.wizyty, 'dzien');
+    return `<section class="tydzien"><div class="tydzien-naglowek"><span>Tydzień ${zakres(t.k)}</span><b>${godz(plan)}</b></div>
+      ${Object.entries(dni).map(([dz, l]) => `<div class="tydzien-dzien${dowPn(dz) >= 5 ? ' weekend' : ''}">
+        <div class="tydzien-data"><b>${DNI_K[dowPn(dz)]}</b><span>${data(dz).getDate()}</span></div>
+        <div class="tydzien-wizyty">${l.map((w) => `<div class="tydzien-wizyta"><span>${h(w.od)}–${h(w.do)} · ${h(w.nazwisko)}</span>
+          <span>${w.potwierdzona ? godz(w.potw) + ' ✓' : `<span class="szary">${godz(w.plan)}</span>`}</span></div>`).join('')}</div></div>`).join('')}</section>`;
+  }).join('');
+  ekran.innerHTML = `<div class="kal-miesiac"><a class="btn btn-jasny btn-maly" href="#/godziny?m=${miesiacPrzes(m, -1)}" aria-label="Poprzedni miesiąc">‹</a>
+      <h2>${MIES_M[mm - 1]} ${r}</h2><a class="btn btn-jasny btn-maly" href="#/godziny?m=${miesiacPrzes(m, 1)}" aria-label="Następny miesiąc">›</a></div>
+    <div class="suma"><div>W grafiku<b>${godz(d.suma.plan)}</b></div><div>Potwierdzone<b>${godz(d.suma.potw)}</b></div></div>
+    ${d.suma.bez_raportu > 0 ? `<div class="uwaga">Wizyty bez raportu: ${d.suma.bez_raportu}. Uzupełnij je w „Moje wizyty”.</div>` : ''}
+    <p class="szary">Potwierdzone = z Twoich raportów (✓). Biuro przekazuje je do rozliczenia.</p>
+    ${html || '<p class="pusto">Brak wizyt w tym miesiącu.</p>'}`;
+}
+
+async function ekranWolneDni(lista) {
+  uklad('Moje wolne dni', { zakladka: 'biuro', wstecz: true });
+  if (!lista) {
+    ladowanie();
+    try { lista = (await api('GET', '/wolne-dni')).dni; } catch (e) { return bladEkranu(e); }
+  }
+  const jutro = iso(new Date(Date.now() + 86400000));
+  ekran.innerHTML = `<p>Wpisz dni, w które nie możesz pracować. Biuro nie zaproponuje Ci wtedy wizyt.</p>
+    <form id="f-wolne" class="karta"><div class="dwa"><div><label class="pole" for="od">Od</label><input id="od" type="date" min="${jutro}" value="${jutro}" required></div>
+    <div><label class="pole" for="do">Do</label><input id="do" type="date" min="${jutro}" value="${jutro}" required></div></div>
+    <div id="blad"></div><div class="przyciski"><button class="btn" type="submit">Dodaj wolne</button></div></form>
+    <h2>Wpisane</h2>${lista.length ? lista.map((n) => `<div class="karta wolna"><div><b>${h(krotko(n.od))}${n.do_dnia !== n.od ? ' – ' + h(krotko(n.do_dnia)) : ''}</b>
+      <div class="szary">${n.typ === 'urlop' ? 'urlop' : n.typ === 'L4' ? 'zwolnienie' : 'wolne'}${n.wpisal === 'biuro' ? ' · wpisało biuro' : ''}</div></div>
+      ${n.mozna_usunac ? `<button class="btn btn-czerwony btn-maly" type="button" data-akcja="usun-wolne" data-id="${n.id}">Usuń</button>` : ''}</div>`).join('')
+      : '<p class="szary">Nie masz wpisanych wolnych dni.</p>'}`;
+  // Zmiana dat = nowe sprawdzenie (znika stary komunikat i pole „Oddaj wizyty…”)
+  ['od', 'do'].forEach((p) => $('#' + p).addEventListener('change', () => { $('#blad').innerHTML = ''; }));
+  $('#od').onchange = () => { if ($('#do').value < $('#od').value) $('#do').value = $('#od').value; $('#do').min = $('#od').value; };
+  $('#f-wolne').onsubmit = async (e) => {
+    e.preventDefault();
+    const oddaj = !!($('#oddaj-okres') && $('#oddaj-okres').checked);
+    try {
+      const r = await api('POST', '/wolne-dni', { od: $('#od').value, do: $('#do').value, oddaj });
+      komunikat(oddaj ? 'Dodano wolne. Wizyty z tych dni wróciły do „Wolnych wizyt”.' : 'Dodano wolne.');
+      ekranWolneDni(r.dni);
+    } catch (err) {
+      const w = err.dane && err.dane.wizyty;
+      $('#blad').innerHTML = `<div class="blad">${h(err.message)}${w ? '<ul class="lista">' + w.map((x) => `<li>${h(x)}</li>`).join('') + '</ul>' : ''}</div>`
+        + (w && err.dane.moznaOddac ? `<label class="wybor"><input type="checkbox" id="oddaj-okres"> Oddaj wizyty przydzielone w tym okresie (${w.length})</label>` : '');
+    }
+  };
+}
+
+async function usunWolne(id) {
+  if (!(await potwierdz('Usunąć wolne?', '', 'Tak, usuń', 'btn-pomarancz'))) return;
+  try { const r = await api('DELETE', '/wolne-dni/' + id); ekranWolneDni(r.dni); } catch (e) { komunikat(e.message); }
+}
+
+async function wyloguj(zapomnij) {
+  if (zapomnij && !(await potwierdz('Usunąć logowanie z tego telefonu?', '<p>Przy następnym otwarciu trzeba będzie wpisać kod z SMS-a.</p>', 'Tak, usuń', 'btn-pomarancz'))) return;
+  try { await api('POST', '/logout', { zapomnij: !!zapomnij }); } catch (e) { /* nic */ }
+  Object.keys(localStorage).filter((k) => k.startsWith('c:')).forEach((k) => localStorage.removeItem(k));
+  stan.ja = null;
+  location.hash = '#/start';
+}
+
+// ------------------------------------------------------------ kliknięcia i trasy
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-akcja]');
+  if (!el) return;
+  const { akcja, id, cel } = el.dataset;
+  ({
+    wstecz: () => (history.length > 1 ? history.back() : (location.hash = '#/moje')),
+    idz: () => (location.hash = cel),
+    odswiez: () => pokaz(),
+    bierz: () => bierz(id),
+    'bierz-pakiet': bierzPakiet,
+    'odrzuc-pakiet': odrzucPakiet,
+    zapytaj: () => zapytaj(id),
+    oddaj: () => oddaj(id),
+    'usun-wolne': () => usunWolne(id),
+    wyloguj: () => wyloguj(false),
+    zapomnij: () => wyloguj(true),
+    push: wlaczPowiadomienia,
+    'koniec-podgladu': async () => { try { await api('POST', '/biuro/podglad', { opiekunka: null }); } catch (e) { /* nic */ } location.href = '/biuro.html'; },
+    'caly-grafik': () => { stan.calyGrafik = true; pokaz(); },
+    'oddaj-zaznaczone': oddajZaznaczone,
+    'push-pozniej': () => { pamiec('push-pozniej', 1); pokaz(); },
+  }[akcja] || (() => {}))();
+});
+
+const TRASY = [
+  [/^#\/start$/, ekranStart], [/^#\/telefon$/, ekranTelefon], [/^#\/kod$/, ekranKod], [/^#\/pin$/, ekranPin], [/^#\/ustaw-pin$/, ekranUstawPin],
+  [/^#\/moje$/, ekranMoje], [/^#\/wizyta\/(\d+)$/, ekranWizyta], [/^#\/raport\/(\d+)$/, ekranRaport], [/^#\/zgloszenie\/(\d+)$/, ekranZgloszenie],
+  [/^#\/wolne$/, ekranWolne], [/^#\/podopieczni$/, ekranPodopieczni], [/^#\/podopieczny\/(\d+)$/, ekranPodopieczny],
+  [/^#\/oddaj(\?.*)?$/, ekranOddaj], [/^#\/wiecej$/, ekranWiecej], [/^#\/godziny(\?.*)?$/, ekranGodziny], [/^#\/kalendarz(\?.*)?$/, ekranKalendarz], [/^#\/wolne-dni$/, () => ekranWolneDni()],
+];
+const PUBLICZNE = ['#/start', '#/telefon', '#/kod', '#/pin'];
+
+async function pokaz() {
+  zamknijOkno();
+  const hash = location.hash || '#/start';
+  if (!stan.ja && !PUBLICZNE.includes(hash) && hash !== '#/ustaw-pin') {
+    try {
+      const me = await api('GET', '/me');
+      stan.telefonBiura = me.telefonBiura;
+      if (me.stan !== 'zalogowana') { location.hash = '#/start'; return; }
+      if (me.ja.rola !== 'opiekunka') { location.href = '/biuro.html'; return; }
+      stan.ja = me.ja;
+      stan.podglad = !!me.podglad; pokazPodglad(); stan.vapid = me.vapid;
+    } catch (e) {
+      const me = pamiec('c:/me');
+      if (!me || me.stan !== 'zalogowana') { if (e.kod !== 401) location.hash = '#/start'; return; }
+      stan.ja = me.ja; stan.telefonBiura = me.telefonBiura; stan.vapid = me.vapid;
+    }
+  }
+  for (const [wzor, fn] of TRASY) {
+    const m = hash.match(wzor);
+    if (m) {
+      Promise.resolve(fn(m[1])).then(() => {
+        const y = stan.przewiniecie && stan.przewiniecie[hash];
+        if (y) { window.scrollTo(0, y); delete stan.przewiniecie[hash]; }
+      });
+      ekran.focus({ preventScroll: true });
+      return;
+    }
+  }
+  location.hash = '#/start';
+}
+// Zapamiętujemy, skąd opiekunka weszła (lista, dzień w kalendarzu…) i jak daleko była przewinięta – żeby tam wrócić
+const GLOWNE = /^#\/(moje|kalendarz|podopieczni|wolne|wiecej)(\?|$)/;
+stan.przewiniecie = {};
+window.addEventListener('hashchange', (e) => {
+  const stary = '#' + (String(e.oldURL).split('#')[1] || '');
+  if (GLOWNE.test(stary)) { stan.powrot = stary; stan.przewiniecie[stary] = window.scrollY; }
+  pokaz();
+});
+document.querySelector('#dol a[data-zakladka=moje]').addEventListener('click', (e) => {
+  if (pamiec('widok-moje') === 'kalendarz') { e.preventDefault(); location.hash = '#/kalendarz'; }
+});
+
+// Po powrocie do aplikacji (np. po 2 godzinach w kieszeni) – świeże dane
+let ukryto = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { ukryto = Date.now(); return; }
+  if (ukryto && Date.now() - ukryto > 60000 && ['#/moje', '#/wolne'].includes(location.hash) && $('#okno').hidden) pokaz();
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+pokaz();
+
+</script>
+</body>
+</html>
